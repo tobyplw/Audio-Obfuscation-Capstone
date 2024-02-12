@@ -6,6 +6,12 @@ __pycache__/
 # C extensions
 *.so
 
+# wav files
+*.wav
+
+#DS_Store
+*.DS_Store
+
 # Distribution / packaging
 .Python
 build/
