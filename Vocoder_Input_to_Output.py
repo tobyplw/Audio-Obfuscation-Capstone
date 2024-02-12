@@ -1,15 +1,9 @@
 from numpy import pi, mod, sin, sqrt, tan, frombuffer, float32, linspace, finfo, clip, array
 import numpy as np
 from scipy.signal import lfilter, sawtooth
-from scipy.io.wavfile import write
 from struct import pack
 import pyaudio
-import io
-import wave
-import os
 
-#from soundfile import SoundFile
-import soundfile as sf
 
 '''33 frequencies -> Bandpass filter design coefficients'''
 
@@ -172,50 +166,15 @@ stream = pyaud.open(format =  pyaudio.paFloat32,
                input = True,
                output = True)
 
-try:
-    os.remove("./output.wav")
-except FileNotFoundError:
-    pass
-
 print("listening...")
-#test_file = wave.open('test.wav', 'rb')
-#output_file = wave.open('output.wav', 'wb')
-#output_file.setnchannels(1)
-#output_file.setframerate(Fs)
-#output_file.setsampwidth(4)
-#length = test_file.getnframes()
-#print(length)
-#output_file.setnframes(length)
 
-all = np.array([], dtype = float32)
-#record_file = SoundFile('sound.wav')
 while True:
     try:
-#with SoundFile('sound.wav', mode ='w+', samplerate = Fs, channels = 1) as f:
         rawsamps = stream.read(chunk, exception_on_overflow=False)
-        #rawsamps = test_file.readframes(length)
         samps = frombuffer(rawsamps, dtype=float32)
-#print(type(samps))
-
         samps2=vocoder(samps)
-        #all = np.append(all, samps2)
         out = pack("%df"%len(samps2), *samps2)
         stream.write(out)
     except KeyboardInterrupt:
         stream.close()
         pyaud.terminate()
-#final = frombuffer(out, dtype=float32)
-#print(type(final))
-#print(final)
-#f.write(samps2)
-#except KeyboardInterrupt:
-#print(all)
-#stream.close()
-#test_file.close()
-#sf.write('output.wav', samps2, Fs)
-#record_file.write(all)
-#print(samps2)
-#output_file.writeframes(all.tobytes(order = 'C'))
-#write('output.wav', Fs, all)
-#record_file.close()
-#pyaud.terminate()

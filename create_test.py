@@ -1,21 +1,24 @@
 import wave
 import glob
 import random
+import numpy as np
+
+from scipy.io.wavfile import write, read
 
 infiles = glob.glob('./Test_data/*.wav')
 random.shuffle(infiles)
+print("FILES FOR TESTING")
 print(infiles)
 
-outfile = 'test2.wav'
+outfile = 'Test_Audio_Input.wav'
 
+all = np.array([], dtype = np.float32)
 
-with wave.open(outfile, 'wb') as wav_out:
-    wav_out.setnchannels(1)
-    wav_out.setsampwidth(4)
-    wav_out.setframerate(22000)
+rate = 0
+for wav_path in infiles:
+    rate, in_data = read(wav_path)
+    in_data = in_data.astype(np.float32, order = 'C') / 32768.0
+    all = np.append(all, in_data)
 
-    for wav_path in infiles:
-        with wave.open(wav_path, 'rb') as wav_in:
-            if not wav_out.getnframes():
-                wav_out.setparams(wav_in.getparams())
-            wav_out.writeframes(wav_in.readframes(wav_in.getnframes()))
+write(outfile, rate, all.astype(np.float32))
+
