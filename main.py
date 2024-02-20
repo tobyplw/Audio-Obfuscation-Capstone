@@ -168,6 +168,11 @@ def sign_in():
     # Here, you would replace the above line with actual authentication logic
     # and possibly transition to the main_frame upon successful login
 
+def sign_up():
+    #placeholder function
+    messagebox.showinfo("Login Attempt", f"Username: \nPassword: ")
+    
+
 # Setting up the log_in_frame
 log_in_frame_content = ctk.CTkFrame(log_in_frame)
 log_in_frame_content.pack(pady=20, padx=20, expand=True)
@@ -187,6 +192,48 @@ password_entry.pack(pady=(0,20))
 # Sign In Button
 sign_in_button = ctk.CTkButton(log_in_frame_content, text="Sign In", command=sign_in)
 sign_in_button.pack(pady=20)
+
+# "Sign Up" button on the login page
+sign_up_button = ctk.CTkButton(log_in_frame_content, text="Sign Up", command=lambda: raise_frame(sign_up_frame))
+sign_up_button.pack(pady=(10, 0))
+
+
+# Setting up the sign_up_frame
+sign_up_frame_content = ctk.CTkFrame(sign_up_frame)
+sign_up_frame_content.pack(pady=20, padx=20, expand=True)
+
+# Email Entry
+email_label = ctk.CTkLabel(sign_up_frame_content, text="Email:")
+email_label.pack(pady=(10, 5))
+email_entry = ctk.CTkEntry(sign_up_frame_content)
+email_entry.pack(pady=5)
+
+# Username Entry (Reused from login)
+username_label_signup = ctk.CTkLabel(sign_up_frame_content, text="Username:")
+username_label_signup.pack(pady=(10, 5))
+username_entry_signup = ctk.CTkEntry(sign_up_frame_content)
+username_entry_signup.pack(pady=5)
+
+# Password Entry
+password_label_signup = ctk.CTkLabel(sign_up_frame_content, text="Password:")
+password_label_signup.pack(pady=(10, 5))
+password_entry_signup = ctk.CTkEntry(sign_up_frame_content, show="*")
+password_entry_signup.pack(pady=5)
+
+# Confirm Password Entry
+confirm_password_label = ctk.CTkLabel(sign_up_frame_content, text="Confirm Password:")
+confirm_password_label.pack(pady=(10, 5))
+confirm_password_entry = ctk.CTkEntry(sign_up_frame_content, show="*")
+confirm_password_entry.pack(pady=(5, 20))
+
+# Placeholder for the actual sign-up button functionality
+sign_up_confirm_button = ctk.CTkButton(sign_up_frame_content, text="Create Account", command=sign_up) # Implement functionality later
+sign_up_confirm_button.pack(pady=10)
+
+# Button to go back to the login page
+back_to_login_button = ctk.CTkButton(sign_up_frame_content, text="Back to Login", command=lambda: raise_frame(log_in_frame))
+back_to_login_button.pack(pady=10)
+
 
 # Continue with your existing code to initially show the main frame and start the app's main loop
 # raise_frame(main_frame)
