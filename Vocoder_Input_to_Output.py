@@ -6,7 +6,7 @@ from vocoder import Vocoder
 
 
 # Initialize Vocoder Class
-voc = Vocoder(create_random_seed = False, rate = 16000, chunk = 4096)
+voc = Vocoder(create_random_seed = False, rate = 48000, chunk = 4096, distortion = 0.1)
 
 # Initialize PyAudio
 pyaud = pyaudio.PyAudio()

@@ -4,7 +4,7 @@ import random
 
 
 class Vocoder:
-    def __init__(self, create_random_seed = False, rate = 48000, chunk = 4096):
+    def __init__(self, create_random_seed = False, rate = 48000, chunk = 4096, distortion = 0.25):
         
         self.rate = rate
         self.create_random_seed = create_random_seed
@@ -18,6 +18,12 @@ class Vocoder:
         self.dB=10**(60/20)
         self.chunk = chunk
 
+        self.distortion = distortion
+        if(self.distortion < 0.1):
+            self.distortino = 0.1
+        elif(self.distortion > 0.8):
+            self.distortion = 0.8
+
         self.phase0 = 0
         self.phase1 = 0
         self.phase2 = 0
@@ -27,7 +33,7 @@ class Vocoder:
         self.phase6 = 0
         self.phase7 = 0
 
-        self.r = 0.99#0.99
+        self.r = 0.99
         self.lowpassf = [1.0, -2.0*self.r, +self.r*self.r]
         self.d = 0.41004238851988095
         self.amp=1.0
@@ -127,7 +133,7 @@ class Vocoder:
         x = sin(self.phase5)
         y = sin(self.phase6)
         z = sin(self.phase7)
-        carriersignal = 0.25 * (x + y + z + self.d)
+        carriersignal = self.distortion * (x + y + z + self.d)
         self.phase1 = mod(self.phase1[length-1], 2.0*pi)
         self.phase2 = mod(self.phase2[length-1], 2.0*pi)
         self.phase3 = mod(self.phase3[length-1], 2.0*pi)
@@ -138,15 +144,15 @@ class Vocoder:
         
         return carriersignal
 
-    def transform(self, sig):
+    def transform(self, data):
 
-        length=len(sig)
+        length=len(data)
         carriersignal=0
         carriersignal=self.carrier(length)
         vout=0
         for i in range(0, 33):
             bandpasscarrier = lfilter(self.b_freq_coeff[i], self.a_freq_coeff[i], carriersignal)
-            bandpassmodulator = lfilter(self.b_freq_coeff[i], self.a_freq_coeff[i], sig)
+            bandpassmodulator = lfilter(self.b_freq_coeff[i], self.a_freq_coeff[i], data)
             rectifiedmodulator = abs(bandpassmodulator*bandpassmodulator)/length
             envelopemodulator = sqrt(lfilter([1.0], self.lowpassf, rectifiedmodulator))
             vout+= bandpasscarrier*envelopemodulator
