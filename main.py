@@ -16,7 +16,7 @@ screen_width = app.winfo_screenwidth()-9
 screen_height = app.winfo_screenheight()
 app.geometry(f'{screen_width}x{screen_height}+0+0')
 # app.attributes('-fullscreen', True)
-#app.iconbitmap('S:\\CapstoneGui\\NewLogo.ico')  # Set icon/logo
+app.iconbitmap('assets/NewLogo.ico')  # Set icon/logo
 # To exit fullscreen with the Escape key
 def exit_fullscreen(event=None):
     app.attributes('-fullscreen', False)
@@ -65,11 +65,11 @@ main_frame_content = ctk.CTkFrame(main_frame, fg_color='transparent')
 main_frame_content.pack(pady=20, padx=20, expand=True)
 
 # Load the sponsor's logo image
-#logo_image = PhotoImage(file='S:\\CapstoneGui\\ombra-logo.png')
+logo_image = PhotoImage(file='assets\ombra-logo.png')
 
 # Display the logo image above the clock
-#logo_label = ctk.CTkLabel(main_frame_content, image=logo_image, text="")
-#logo_label.pack(pady=(10, 0))
+logo_label = ctk.CTkLabel(main_frame_content, image=logo_image, text="")
+logo_label.pack(pady=(10, 0))
 
 # Clock Label
 # clock_font = ("Helvetica", 24, "bold")
