@@ -202,7 +202,7 @@ sign_in_button = ctk.CTkButton(log_in_frame_content, text="Sign In", command=sig
 sign_in_button.pack(pady=20)
 
 # "Sign Up" button on the login page
-sign_up_button = ctk.CTkButton(log_in_frame_content, text="Sign Up", command=lambda: raise_frame(sign_up_frame))
+sign_up_button = ctk.CTkButton(log_in_frame_content, text="Create Account", command=lambda: raise_frame(sign_up_frame))
 sign_up_button.pack(pady=(10, 0))
 
 
@@ -210,11 +210,6 @@ sign_up_button.pack(pady=(10, 0))
 sign_up_frame_content = ctk.CTkFrame(sign_up_frame)
 sign_up_frame_content.pack(pady=20, padx=20, expand=True)
 
-# Email Entry
-email_label = ctk.CTkLabel(sign_up_frame_content, text="Email:")
-email_label.pack(pady=(10, 5))
-email_entry = ctk.CTkEntry(sign_up_frame_content)
-email_entry.pack(pady=5)
 
 # Username Entry (Reused from login)
 username_label_signup = ctk.CTkLabel(sign_up_frame_content, text="Username:")
@@ -243,7 +238,6 @@ back_to_login_button = ctk.CTkButton(sign_up_frame_content, text="Back to Login"
 back_to_login_button.pack(pady=10)
 
 
-# Continue with your existing code to initially show the main frame and start the app's main loop
 # raise_frame(main_frame)
 # Initially, show the main frame
 raise_frame(log_in_frame)
