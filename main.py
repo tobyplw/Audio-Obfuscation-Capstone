@@ -61,7 +61,7 @@ clock_font_size = 150  # Font size
 # clock_font_weight = "bold"  # Font weight
 
 # Main Frame Content - Adjust layout for clock and buttons
-main_frame_content = ctk.CTkFrame(main_frame)
+main_frame_content = ctk.CTkFrame(main_frame, fg_color='transparent')
 main_frame_content.pack(pady=20, padx=20, expand=True)
 
 # Load the sponsor's logo image
@@ -207,7 +207,7 @@ sign_up_button.pack(pady=(10, 0))
 
 
 # Setting up the sign_up_frame
-sign_up_frame_content = ctk.CTkFrame(sign_up_frame)
+sign_up_frame_content = ctk.CTkFrame(sign_up_frame, fg_color='transparent')
 sign_up_frame_content.pack(pady=20, padx=20, expand=True)
 
 
