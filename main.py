@@ -46,7 +46,7 @@ def start_recording():
     # Optional: Show a dialog box as feedback
 
 # Create frames for each page
-log_in_frame = ctk.CTkFrame(app)
+log_in_frame = ctk.CTkFrame(app, fg_color= 'transparent')
 sign_up_frame = ctk.CTkFrame(app)
 main_frame = ctk.CTkFrame(app)
 call_frame = ctk.CTkFrame(app)
@@ -182,7 +182,7 @@ def sign_up():
     
 
 # Setting up the log_in_frame
-log_in_frame_content = ctk.CTkFrame(log_in_frame)
+log_in_frame_content = ctk.CTkFrame(log_in_frame, fg_color='transparent')
 log_in_frame_content.pack(pady=20, padx=20, expand=True)
 
 # Username Entry
