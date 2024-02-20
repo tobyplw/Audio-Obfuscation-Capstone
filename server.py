@@ -2,8 +2,6 @@ import socket
 import pyaudio
 import threading
 
-# @NOTE: Use 2 threads 
-# https://stackoverflow.com/questions/33434007/python-socket-send-receive-messages-at-the-same-time
 # CONSTANTS FOR SOCKET
 HOST = '127.0.0.1'
 PORT = 2323
@@ -12,36 +10,33 @@ PORT = 2323
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 44100
-CHUNK_SIZE = 1024
+CHUNK_SIZE = 4096
 
-# Function for the listening thread
-def listen():
-    return
-
-# Function for the talking thread
-def talk():
-    return
-
-# Create the threads
-listen_thread = threading.Thread(target=listen)
-talk_thread = threading.Thread(target=talk)
+# Function for transferring data between clients
+def transfer(sender_socket, receiver_socket):
+    while True:
+        data = receiver_socket.recv(CHUNK_SIZE)
+        # @NOTE: Manipulate data here
+        sender_socket.sendall(data)
 
 
 # Create PyAudio object
 audio = pyaudio.PyAudio()
 
 # Create stream for audio output (playback)
-play = audio.open(format=FORMAT, 
-                  channels=CHANNELS, 
-                  rate=RATE, 
-                  output=True, 
-                  frames_per_buffer=CHUNK_SIZE)
+record_stream = audio.open(format=FORMAT, 
+                    channels=CHANNELS, 
+                    rate=RATE, 
+                    output=False,
+                    input=True, 
+                    frames_per_buffer=CHUNK_SIZE)
 
 # @NOTE: Maybe channels should be increased, check docs
-record = audio.open(format=FORMAT,
+listen_stream = audio.open(format=FORMAT,
                     channels=CHANNELS,
                     rate=RATE,
-                    input=True,
+                    input=False,
+                    output=True,
                     frames_per_buffer=CHUNK_SIZE)
 
 
@@ -50,29 +45,23 @@ server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.bind((HOST, PORT))
 
 # Listen for connections and accept
-server_socket.listen(1)
+server_socket.listen(2)
 print('Server started... listening for connection!')
-conn, addr = server_socket.accept()
+client_socket1, addr1 = server_socket.accept()
+client_socket2, addr2 = server_socket.accept()
 
-# Connected
-with conn:
-    print('Connection established with client: ', addr)
+# Create the threads
+transfer_thread1 = threading.Thread(target=transfer, args=(client_socket1, client_socket2))
+transfer_thread2 = threading.Thread(target=transfer, args=(client_socket2, client_socket1))
 
-    # Send and receive voice data
-    while True:
-        audio_data = conn.recv(CHUNK_SIZE)
-        # voice_data = record.read(CHUNK_SIZE, exception_on_overflow=False)
+# Start the threads
+transfer_thread1.start()
+transfer_thread2.start()
 
-        # TODO: MANIPULATE DATA HERE
-        # NOTE: Check IP of caller to ensure only their voice is altered
+# Wait for them to finish
+# transfer_thread1.join()
+# transfer_thread2.join()
         
-        # TODO: SEND TO OTHER CLIENT
-        # conn.sendall(voice_data)
-        play.write(audio_data)
-
-        
-# Close all Streams @NOTE: They are unreachable with current imp
-record.stop_stream()
-record.close()
-play.close()
+# Close all Streams
+record_stream.close()
 audio.terminate()

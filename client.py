@@ -1,6 +1,6 @@
 import socket
 import pyaudio
-from threading import Thread
+import threading
 
 # CONSTANTS FOR SOCKET
 HOST = '127.0.0.1'
@@ -9,36 +9,23 @@ PORT = 2323
 # CONSTANTS FOR PyAudio
 FORMAT = pyaudio.paInt16
 RATE = 44100
-CHUNK_SIZE = 1024
+CHUNK_SIZE = 4096
 CHANNELS = 1
 
 # Function for listening thread
-def listen(conn):
-    return
+def listen(socket, data_stream):
+    while True:
+        data = socket.recv(CHUNK_SIZE)
+        data_stream.write(data)
 
 # Function for talking thread
-def talk():
-    return
-
-# Create the threads
-listen_thread = Thread(target=listen)
-talk_thread = Thread(target=talk)
+def talk(socket, data_stream):
+    while True:
+        data = data_stream.read(CHUNK_SIZE)
+        socket.sendall(data)
 
 # Create audio object and play and record
 audio = pyaudio.PyAudio()
-
-# @NOTE: Not used currently
-play = audio.open(format=FORMAT, 
-                  channels=CHANNELS, 
-                  rate=RATE, 
-                  output=True, 
-                  frames_per_buffer=CHUNK_SIZE)
-
-record = audio.open(format=FORMAT, 
-                    rate=RATE, 
-                    channels=CHANNELS,
-                    frames_per_buffer=CHUNK_SIZE,
-                    input=True)
 
 # Create client socket
 # @NOTE: AF_INET specifies the ipv4 address family.
@@ -48,14 +35,30 @@ client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((HOST, PORT))
 print("Connected to server")
 
-# Stream audio from microphone to server
+# @NOTE: Not used currently
+listen_stream = audio.open(format=FORMAT, 
+                  channels=CHANNELS, 
+                  rate=RATE, 
+                  output=True, 
+                  input=False,
+                  frames_per_buffer=CHUNK_SIZE)
 
-while True:
-    data = record.read(CHUNK_SIZE, exception_on_overflow=False)
-    client_socket.sendall(data)
+record_stream = audio.open(format=FORMAT, 
+                    rate=RATE, 
+                    channels=CHANNELS,
+                    frames_per_buffer=CHUNK_SIZE,
+                    input=True,
+                    output=False)
 
 
-# UNREACHABLE
-record.stop_stream()
-record.close()
-audio.terminate()
+
+# Create the threads
+listen_thread = threading.Thread(target=listen, args=(client_socket, listen_stream))
+talk_thread = threading.Thread(target=talk, args=(client_socket, record_stream))
+
+listen_thread.start()
+talk_thread.start()
+
+# Wait for the threads to finish execution
+# listen_thread.join()
+# talk_thread.join()
