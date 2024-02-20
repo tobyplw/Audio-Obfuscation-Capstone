@@ -1,7 +1,17 @@
-import pymongo
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
 import bcrypt
+import certifi
 
-myclient = pymongo.MongoClient("mongodb://localhost:27017")
+uri = "mongodb+srv://allatt_audio:Capstone@capstone.v2sgpm7.mongodb.net/?retryWrites=true&w=majority"
+
+myclient = MongoClient(uri, tlsCAFile=certifi.where())
+
+try:
+    myclient.admin.command('ping')
+    print("You successfully connected to MongoDB!")
+except Exception as e:
+    print(e)
 
 db = myclient["Capstone"]
 
@@ -46,4 +56,6 @@ def log_call (caller, callee, call_date, call_duration, call_transcript):
                 "call_transcript": call_transcript
                 }
     Calls.insert_one(new_call)
+
+
 
