@@ -169,8 +169,16 @@ def sign_in():
     # and possibly transition to the main_frame upon successful login
 
 def sign_up():
-    #placeholder function
-    messagebox.showinfo("Login Attempt", f"Username: \nPassword: ")
+    username = username_entry_signup.get()
+    password = password_entry_signup.get()
+    verify_password = confirm_password_entry.get()
+    time = datetime.now()
+    if (password == verify_password):
+        database.create_user(username, password, time, "192.0.1.01")
+        raise_frame(log_in_frame)
+    else:
+        messagebox.showinfo("Signup Attempt", f"Passwords do not match")
+
     
 
 # Setting up the log_in_frame
