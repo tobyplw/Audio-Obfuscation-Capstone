@@ -87,6 +87,19 @@ start_call_button.pack(side='left', padx=10, pady=10, anchor='center')
 access_logs_button = ctk.CTkButton(button_frame, text="Access Logs", command=lambda: raise_frame(logs_frame), width=200, height=40)
 access_logs_button.pack(side='left', padx=10, pady=10, anchor='center')
 
+button = ctk.CTkButton(button_frame, text='Light', command = lambda: ctk.set_appearance_mode('light'), width=200, height=40)
+button.pack(side='left', padx=10, pady=10, anchor='center')
+
+def sign_out():
+    username_entry.delete(0, tk.END)
+    password_entry.delete(0, tk.END)
+    raise_frame(log_in_frame)
+
+# Update the command for the sign_out_button to use the sign_out function
+sign_out_button = ctk.CTkButton(main_frame_content, text="Sign Out", command=sign_out)
+sign_out_button.pack(pady=(10, 20), padx=20, anchor='e')
+
+
 # Call Frame Content
 call_label = ctk.CTkLabel(call_frame, text="Enter Callee's Unique ID:")
 call_label.pack(pady=10, padx=20)
@@ -109,6 +122,7 @@ start_recording_button = ctk.CTkButton(call_frame, text="Start Recording", comma
 
 back_button_call = ctk.CTkButton(call_frame, text="Back to Main", command=lambda: raise_frame(main_frame))
 back_button_call.pack(pady=20, padx=20)
+
 
 # Logs Frame Content - Placeholder content for now
 logs_label = ctk.CTkLabel(logs_frame, text="Call Logs", font=(clock_font_family, 35))
@@ -163,10 +177,9 @@ def sign_in():
     if(database.login(username,password )):
         raise_frame(main_frame)
     else:
-        messagebox.showinfo("Login Attempt", f"Username: {username}\nPassword: {password}")
-    # Placeholder for authentication logic
-    # Here, you would replace the above line with actual authentication logic
-    # and possibly transition to the main_frame upon successful login
+        messagebox.showinfo("Login Attempt Failed", f"The username or password\nyou entered is incorrect.")
+        password_entry.delete(0, tk.END)
+    
 
 def sign_up():
     username = username_entry_signup.get()
@@ -177,34 +190,58 @@ def sign_up():
         database.create_user(username, password, time, "192.0.1.01")
         raise_frame(log_in_frame)
     else:
-        messagebox.showinfo("Signup Attempt", f"Passwords do not match")
+        messagebox.showinfo("Signup Attempt", f"Passwords do not match\nPlease try again")
 
-    
 
 # Setting up the log_in_frame
-log_in_frame_content = ctk.CTkFrame(log_in_frame, fg_color='transparent')
+log_in_frame_content = ctk.CTkFrame(log_in_frame,fg_color='transparent')
 log_in_frame_content.pack(pady=20, padx=20, expand=True)
+
+welcome = ctk.CTkLabel(log_in_frame_content, text="Hello\n&\nWelcome!\n\nLogin To Your Account\n\n", font=('Helvetica', 36), fg_color='transparent')
+welcome.pack()
+
+# Load the image
+login_image = PhotoImage(file='assets\login.png')
+
+# Create a frame for the image and place it to the left
+image_frame = ctk.CTkFrame(log_in_frame_content, fg_color='transparent', width=50, height=50)  # Adjust size as needed
+image_frame.pack(side='left', fill='both', expand=True)
+# image_frame.pack_propagate(True)  # Prevent the frame from shrinking to fit the image
+
+# Display the image using a label inside the image_frame
+image_label = ctk.CTkLabel(image_frame, image=login_image, text="", width=20, height=20)
+image_label.pack(padx=(0,20))
+
+# Create a frame for the login boxes and place it to the right
+login_boxes_frame = ctk.CTkFrame(log_in_frame_content, fg_color='transparent')
+login_boxes_frame.pack(side='right', fill='both', expand=True)
 
 # Username Entry
 username_label = ctk.CTkLabel(log_in_frame_content, text="Username:")
-username_label.pack(pady=(10,0))
+# username_label.pack(pady=(10,0))
 username_entry = ctk.CTkEntry(log_in_frame_content)
-username_entry.pack(pady=(0,20))
+# username_entry.pack(pady=(0,20))
 
 # Password Entry
 password_label = ctk.CTkLabel(log_in_frame_content, text="Password:")
-password_label.pack(pady=(10,0))
+# password_label.pack(pady=(10,0))
 password_entry = ctk.CTkEntry(log_in_frame_content, show="*")
-password_entry.pack(pady=(0,20))
+# password_entry.pack(pady=(0,20))
 
 # Sign In Button
 sign_in_button = ctk.CTkButton(log_in_frame_content, text="Sign In", command=sign_in)
-sign_in_button.pack(pady=20)
+# sign_in_button.pack(pady=20)
 
 # "Sign Up" button on the login page
 sign_up_button = ctk.CTkButton(log_in_frame_content, text="Create Account", command=lambda: raise_frame(sign_up_frame))
-sign_up_button.pack(pady=(10, 0))
+# sign_up_button.pack(pady=(10, 0))
 
+username_label.pack(in_=login_boxes_frame, pady=(50,0))
+username_entry.pack(in_=login_boxes_frame, pady=(0,20))
+password_label.pack(in_=login_boxes_frame, pady=(10,0))
+password_entry.pack(in_=login_boxes_frame, pady=(0,20))
+sign_in_button.pack(in_=login_boxes_frame, pady=20)
+sign_up_button.pack(in_=login_boxes_frame, pady=(10, 0))
 
 # Setting up the sign_up_frame
 sign_up_frame_content = ctk.CTkFrame(sign_up_frame, fg_color='transparent')
