@@ -6,6 +6,7 @@ from tkinter import messagebox  # Import messagebox for showing dialog messages
 from datetime import datetime  # Import datetime to fetch the current time
 from tkinter import ttk  # Import ttk module for Treeview
 from tkinter import PhotoImage
+import database
 
 # Initialize the main application window
 app = ctk.CTk()
@@ -15,7 +16,7 @@ screen_width = app.winfo_screenwidth()-9
 screen_height = app.winfo_screenheight()
 app.geometry(f'{screen_width}x{screen_height}+0+0')
 # app.attributes('-fullscreen', True)
-app.iconbitmap('S:\\CapstoneGui\\NewLogo.ico')  # Set icon/logo
+#app.iconbitmap('S:\\CapstoneGui\\NewLogo.ico')  # Set icon/logo
 # To exit fullscreen with the Escape key
 def exit_fullscreen(event=None):
     app.attributes('-fullscreen', False)
@@ -64,11 +65,11 @@ main_frame_content = ctk.CTkFrame(main_frame)
 main_frame_content.pack(pady=20, padx=20, expand=True)
 
 # Load the sponsor's logo image
-logo_image = PhotoImage(file='S:\\CapstoneGui\\ombra-logo.png')
+#logo_image = PhotoImage(file='S:\\CapstoneGui\\ombra-logo.png')
 
 # Display the logo image above the clock
-logo_label = ctk.CTkLabel(main_frame_content, image=logo_image, text="")
-logo_label.pack(pady=(10, 0))
+#logo_label = ctk.CTkLabel(main_frame_content, image=logo_image, text="")
+#logo_label.pack(pady=(10, 0))
 
 # Clock Label
 # clock_font = ("Helvetica", 24, "bold")
@@ -159,11 +160,13 @@ setup_logs_frame()
 def sign_in():
     username = username_entry.get()
     password = password_entry.get()
+    if(database.login(username,password )):
+        raise_frame(main_frame)
+    else:
+        messagebox.showinfo("Login Attempt", f"Username: {username}\nPassword: {password}")
     # Placeholder for authentication logic
-    messagebox.showinfo("Login Attempt", f"Username: {username}\nPassword: {password}")
     # Here, you would replace the above line with actual authentication logic
     # and possibly transition to the main_frame upon successful login
-    raise_frame(main_frame)  # Transition to main_frame as an example
 
 # Setting up the log_in_frame
 log_in_frame_content = ctk.CTkFrame(log_in_frame)

@@ -46,3 +46,4 @@ def log_call (caller, callee, call_date, call_duration, call_transcript):
                 "call_transcript": call_transcript
                 }
     Calls.insert_one(new_call)
+
