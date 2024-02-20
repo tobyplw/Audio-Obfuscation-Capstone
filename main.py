@@ -8,6 +8,7 @@ from tkinter import ttk  # Import ttk module for Treeview
 from tkinter import PhotoImage
 import database
 
+
 # Initialize the main application window
 app = ctk.CTk()
 app.title('Ombra Audio Obfuscation Platform')
@@ -156,15 +157,8 @@ def setup_logs_frame():
     logs_table.heading("callDate", text="Call Date", anchor=tk.W)
     logs_table.heading("call_transcript", text="Call Recording", anchor=tk.W)
 
-    # Sample Data
-    sample_logs = [
-        ("001", "John Doe", "Jane Smith", "2024-02-08", "This is a sample recording of call 001."),
-        ("002", "Alice Johnson", "Bob Brown", "2024-02-09", "This is a sample recording of call 002."),
-        # Add more sample data as needed
-    ]
-
-    # Insert sample data into the table
-    for log in sample_logs:
+    #CHANGE THE USERNAME HERE
+    for log in database.get_calls("azwad"):
         logs_table.insert(parent='', index='end', iid=log[0], text="", values=log)
 
 # Call the setup_logs_frame function to initialize the logs table when the app starts
@@ -174,10 +168,10 @@ setup_logs_frame()
 def sign_in():
     username = username_entry.get()
     password = password_entry.get()
-    if(database.login(username,password )):
+    if(database.login(username,password)):
         raise_frame(main_frame)
     else:
-        messagebox.showinfo("Login Attempt Failed", f"The username or password\nyou entered is incorrect.")
+        messagebox.showinfo("Login Attempt Failed", f"The username or password you entered is incorrect.")
         password_entry.delete(0, tk.END)
     
 
@@ -185,9 +179,9 @@ def sign_up():
     username = username_entry_signup.get()
     password = password_entry_signup.get()
     verify_password = confirm_password_entry.get()
-    time = datetime.now()
+
     if (password == verify_password):
-        database.create_user(username, password, time, "192.0.1.01")
+        database.create_user(username, password)
         raise_frame(log_in_frame)
     else:
         messagebox.showinfo("Signup Attempt", f"Passwords do not match\nPlease try again")
@@ -197,7 +191,7 @@ def sign_up():
 log_in_frame_content = ctk.CTkFrame(log_in_frame,fg_color='transparent')
 log_in_frame_content.pack(pady=20, padx=20, expand=True)
 
-welcome = ctk.CTkLabel(log_in_frame_content, text="Hello\n&\nWelcome!\n\nLogin To Your Account\n\n", font=('Helvetica', 36), fg_color='transparent')
+welcome = ctk.CTkLabel(log_in_frame_content, text="Login To Your Account\n\n", font=('Helvetica', 36), fg_color='transparent')
 welcome.pack()
 
 # Load the image
