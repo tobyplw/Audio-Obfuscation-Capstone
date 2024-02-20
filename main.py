@@ -45,11 +45,13 @@ def start_recording():
     # Optional: Show a dialog box as feedback
 
 # Create frames for each page
+log_in_frame = ctk.CTkFrame(app)
+sign_up_frame = ctk.CTkFrame(app)
 main_frame = ctk.CTkFrame(app)
 call_frame = ctk.CTkFrame(app)
 logs_frame = ctk.CTkFrame(app)  # Frame for logs
 
-for frame in (main_frame, call_frame, logs_frame):
+for frame in (log_in_frame, sign_up_frame, main_frame, call_frame, logs_frame):
     frame.grid(row=0, column=0, sticky='nsew')
 
 # Define clock font settings with the correct parameters for customtkinter
@@ -153,9 +155,39 @@ def setup_logs_frame():
 # Call the setup_logs_frame function to initialize the logs table when the app starts
 setup_logs_frame()
 
+# Function to handle the sign-in process (placeholder for actual functionality)
+def sign_in():
+    username = username_entry.get()
+    password = password_entry.get()
+    # Placeholder for authentication logic
+    messagebox.showinfo("Login Attempt", f"Username: {username}\nPassword: {password}")
+    # Here, you would replace the above line with actual authentication logic
+    # and possibly transition to the main_frame upon successful login
+    raise_frame(main_frame)  # Transition to main_frame as an example
+
+# Setting up the log_in_frame
+log_in_frame_content = ctk.CTkFrame(log_in_frame)
+log_in_frame_content.pack(pady=20, padx=20, expand=True)
+
+# Username Entry
+username_label = ctk.CTkLabel(log_in_frame_content, text="Username:")
+username_label.pack(pady=(10,0))
+username_entry = ctk.CTkEntry(log_in_frame_content)
+username_entry.pack(pady=(0,20))
+
+# Password Entry
+password_label = ctk.CTkLabel(log_in_frame_content, text="Password:")
+password_label.pack(pady=(10,0))
+password_entry = ctk.CTkEntry(log_in_frame_content, show="*")
+password_entry.pack(pady=(0,20))
+
+# Sign In Button
+sign_in_button = ctk.CTkButton(log_in_frame_content, text="Sign In", command=sign_in)
+sign_in_button.pack(pady=20)
+
 # Continue with your existing code to initially show the main frame and start the app's main loop
-raise_frame(main_frame)
+# raise_frame(main_frame)
 # Initially, show the main frame
-raise_frame(main_frame)
+raise_frame(log_in_frame)
 
 app.mainloop()
