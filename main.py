@@ -68,7 +68,7 @@ main_frame_content.pack(pady=20, padx=20, expand=True)
 
 # Load the sponsor's logo image
 logo_image = ctk.CTkImage(light_image=Image.open('assets/ombra-logo.png'), 
-                          dark_image=Image.open('assets/ombra-logo.png', ), 
+                          dark_image=Image.open('assets/ombra-logo-inverted.png'), 
                           size=(500,500))
 
 # Display the logo image above the clock
