@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import messagebox  # Import messagebox for showing dialog messages
 from datetime import datetime  # Import datetime to fetch the current time
 from tkinter import ttk  # Import ttk module for Treeview
-from tkinter import PhotoImage
+# from tkinter import PhotoImage
 from PIL import Image
 import database
 
@@ -67,8 +67,9 @@ main_frame_content = ctk.CTkFrame(main_frame, fg_color='transparent')
 main_frame_content.pack(pady=20, padx=20, expand=True)
 
 # Load the sponsor's logo image
-logo_image = ctk.CTkImage(light_image=Image.open('assets\ombra-logo.png'), 
-                          dark_image=Image.open('assets\ombra-logo.png'))
+logo_image = ctk.CTkImage(light_image=Image.open('assets/ombra-logo.png'), 
+                          dark_image=Image.open('assets/ombra-logo.png', ), 
+                          size=(500,500))
 
 # Display the logo image above the clock
 logo_label = ctk.CTkLabel(main_frame_content, image=logo_image, text="")
@@ -197,8 +198,9 @@ welcome = ctk.CTkLabel(log_in_frame_content, text="Login To Your Account\n\n", f
 welcome.pack()
 
 # Load the image
-login_image = ctk.CTkImage(light_image=Image.open('assets\login.png'), 
-                           dark_image=Image.open('assets\login.png'))
+login_image = ctk.CTkImage(light_image=Image.open('assets/login.png'), 
+                           dark_image=Image.open('assets/login.png'), 
+                           size=(350,350))
 
 # Create a frame for the image and place it to the left
 image_frame = ctk.CTkFrame(log_in_frame_content, fg_color='transparent', width=50, height=50)  # Adjust size as needed
