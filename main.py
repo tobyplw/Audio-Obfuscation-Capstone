@@ -209,7 +209,7 @@ image_frame.pack(side='left', fill='both', expand=True)
 
 # Display the image using a label inside the image_frame
 image_label = ctk.CTkLabel(image_frame, image=login_image, text="", width=20, height=20)
-image_label.pack(padx=(0,20))
+image_label.pack(padx=(0,40))
 
 # Create a frame for the login boxes and place it to the right
 login_boxes_frame = ctk.CTkFrame(log_in_frame_content, fg_color='transparent')
@@ -235,12 +235,12 @@ sign_in_button = ctk.CTkButton(log_in_frame_content, text="Sign In", command=sig
 sign_up_button = ctk.CTkButton(log_in_frame_content, text="Create Account", command=lambda: raise_frame(sign_up_frame))
 # sign_up_button.pack(pady=(10, 0))
 
-username_label.pack(in_=login_boxes_frame, pady=(50,0))
-username_entry.pack(in_=login_boxes_frame, pady=(0,20))
-password_label.pack(in_=login_boxes_frame, pady=(10,0))
+username_label.pack(in_=login_boxes_frame, pady=(30,0))
+username_entry.pack(in_=login_boxes_frame, pady=(0,0))
+password_label.pack(in_=login_boxes_frame, pady=(0,0))
 password_entry.pack(in_=login_boxes_frame, pady=(0,20))
-sign_in_button.pack(in_=login_boxes_frame, pady=20)
-sign_up_button.pack(in_=login_boxes_frame, pady=(10, 0))
+sign_in_button.pack(in_=login_boxes_frame)
+sign_up_button.pack(in_=login_boxes_frame, pady=(40, 0))
 
 # Setting up the sign_up_frame
 sign_up_frame_content = ctk.CTkFrame(sign_up_frame, fg_color='transparent')
