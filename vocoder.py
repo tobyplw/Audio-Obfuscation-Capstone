@@ -1,6 +1,7 @@
 from numpy import pi, mod, sin, sqrt, tan, linspace, clip
 from scipy.signal import lfilter
 import random
+import numpy as np
 
 
 class Vocoder:
@@ -158,3 +159,17 @@ class Vocoder:
             vout+= bandpasscarrier*envelopemodulator
         vout = clip(vout*self.dB, -1, 1)
         return vout
+
+    # from https://gist.github.com/HudsonHuang/fbdf8e9af7993fe2a91620d3fb86a182
+    def float2pcm(self, sig, dtype='int16'):
+        if sig.dtype.kind != 'f':
+            raise TypeError("'sig' must be a float array")
+        dtype = np.dtype(dtype)
+        if dtype.kind not in 'iu':
+            raise TypeError("'dtype' must be an integer type")
+
+        i = np.iinfo(dtype)
+        abs_max = 2 ** (i.bits - 1)
+        offset = i.min + abs_max
+
+        return (sig * abs_max + offset).clip(i.min, i.max).astype(dtype)
