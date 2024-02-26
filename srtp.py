@@ -16,7 +16,7 @@ DEBUG = 0
 #FORMAT = pyaudio.paFloat32
 FORMAT_TALK = pyaudio.paFloat32
 FORMAT_LISTEN = pyaudio.paInt16
-RATE = 16000
+RATE = 24000
 CHUNK_SIZE_SEND = 512
 CHUNK_SIZE_TALK = 256
 CHANNELS = 1
@@ -94,7 +94,7 @@ def incoming_buffer(buffer, rtp, seq_number, time_delta = 0):
 def talk(udp_socket, record_stream, destination_ip, destination_port):
     ssrc = 5678 
     payload_type = 0  
-    voc = Vocoder(create_random_seed = False, rate = RATE, chunk = CHUNK_SIZE_TALK, distortion=0.1)
+    voc = Vocoder(create_random_seed = False, rate = RATE, chunk = CHUNK_SIZE_TALK, distortion=0.10)
 
     # protect RTP
     key = (b'\x00' * 30) #should change the key
@@ -129,7 +129,7 @@ def listen(udp_socket, listen_stream):
     rx_session = Session(policy=rx_policy)
     previous_time = 0
     prev_play_time = 0
-    print("Recieving audio on " + recieving_ip)
+    print("Recieving audio on " + receiving_ip)
     try: 
         while True:
             try:
@@ -180,22 +180,28 @@ def listen(udp_socket, listen_stream):
 name = sys.argv[1].lower()
 if name == 'tyler':
     destination_ip = '74.135.7.54'
-    #destination_ip = 'localhost'  # Replace with the destination IP address
     destination_port = 9999  # Replace with the destination port
-    recieving_port = 2323
+    receiving_port = 2323
+    receiving_ip = '10.20.45.43' # Tyler local ipv4
 
 elif name == 'toby':
     destination_ip = '23.244.15.222'
     destination_port = 2323
-    recieving_port = 9999
+    receiving_port = 9999
+    hostname = socket.gethostname()
+    receiving_ip = socket.gethostbyname(hostname)
 
-destination_ip = '127.0.0.1'
-hostname = socket.gethostname()
-recieving_ip = socket.gethostbyname(hostname)
-recieving_ip = '127.0.0.1'
-# recieving_ip = '10.20.45.43' # Tyler local ipv4
-#recieving_ip = '0.0.0.0'
-#recieving_ip = 'localhost'
+elif name == 'send': #for localhost testing
+    destination_ip = '127.0.0.1'
+    receiving_ip = '127.0.0.1'
+    destination_port = 2323
+    receiving_port = 9999
+
+elif name == 'receive': #for localhost testing
+    receiving_ip = '127.0.0.1'
+    destination_port = 9999  
+    destination_ip = '127.0.0.1'
+    receiving_port = 2323
 
 
 
@@ -204,7 +210,7 @@ udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 fcntl.fcntl(udp_socket, fcntl.F_SETFL, os.O_NONBLOCK)
 
 # Bind the socket to a specific port
-udp_socket.bind((recieving_ip, recieving_port))
+udp_socket.bind((receiving_ip, receiving_port))
 
 audio = pyaudio.PyAudio()
 record_stream = audio.open(format=FORMAT_TALK, 
@@ -226,7 +232,10 @@ listen_thread = threading.Thread(target=listen, args=(udp_socket, listen_stream)
 
 talk_thread = threading.Thread(target=talk, args=(udp_socket, record_stream, destination_ip, destination_port))
 
-if name == 'tyler':
+if name == 'receive':
     listen_thread.start()
-if name == 'toby':
+elif name == 'send':
+    talk_thread.start()
+else:
+    listen_thread.start()
     talk_thread.start()
