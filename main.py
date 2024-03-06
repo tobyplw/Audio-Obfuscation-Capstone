@@ -3,8 +3,8 @@
 import customtkinter as ctk
 import tkinter as tk
 from tkinter import messagebox  # Import messagebox for showing dialog messages
-from datetime import datetime  # Import datetime to fetch the current time
 from tkinter import ttk  # Import ttk module for Treeview
+from datetime import datetime  # Import datetime to fetch the current time
 # from tkinter import PhotoImage
 from PIL import Image
 import database
@@ -124,9 +124,35 @@ call_button.pack(pady=10, padx=20)
 # Initialize Start Recording Button but don't pack it initially
 start_recording_button = ctk.CTkButton(call_frame, text="Start Recording", command=start_recording)
 
+# # Dropdown menu options 
+# inputOptions = [ 
+#     "yetiMic", 
+#     "LaptopMic", 
+#     "CameraMic", 
+# ] 
+  
+# # datatype of menu text 
+# clicked = StringVar() 
+  
+# # initial menu text 
+# clicked.set( "yetiMic" ) 
+  
+# # Create Dropdown menu 
+# drop = tk.OptionMenu( app , clicked , *inputOptions ) 
+# drop.pack() 
+
+
 back_button_call = ctk.CTkButton(call_frame, text="Back to Main", command=lambda: raise_frame(main_frame))
 back_button_call.pack(pady=20, padx=20)
 
+def combobox_callback(choice):
+    print("combobox dropdown clicked:", choice)
+
+combobox = ctk.CTkComboBox(master=app,
+                                     values=["option 1", "option 2"],
+                                     command=combobox_callback)
+combobox.pack(padx=20, pady=10)
+combobox.set("option 2")  # set initial value
 
 # Logs Frame Content - Placeholder content for now
 logs_label = ctk.CTkLabel(logs_frame, text="Call Logs", font=(clock_font_family, 35))
