@@ -8,7 +8,7 @@ import random
 import os, fcntl
 import errno
 import threading
-# from vocoder import Vocoder
+from vocoder import Vocoder
 import numpy as np
 
 DEBUG = 0
@@ -125,7 +125,7 @@ def incoming_buffer(buffer, rtp, seq_number, time_delta = 0):
 def talk(udp_socket, record_stream, destination_ip, destination_port):
     ssrc = 5678 
     payload_type = 0  
-    # voc = Vocoder(create_random_seed = False, rate = RATE, chunk = CHUNK_SIZE_TALK, distortion=0.10)
+    voc = Vocoder(create_random_seed = False, rate = RATE, chunk = CHUNK_SIZE_TALK, distortion=0.10)
 
     # protect RTP
     key = (b'\x00' * 30) #should change the key
@@ -213,7 +213,7 @@ if name == 'tyler':
     destination_ip = '74.135.7.54'
     destination_port = 9999  # Replace with the destination port
     receiving_port = 2323
-    receiving_ip = '172.27.87.121' # Tyler local ipv4
+    receiving_ip = '10.20.45.43' # Tyler local ipv4
 
 elif name == 'toby':
     destination_ip = '23.244.15.222'
