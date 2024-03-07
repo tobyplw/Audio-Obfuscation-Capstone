@@ -14,9 +14,9 @@ import database
 app = ctk.CTk()
 app.title('Ombra Audio Obfuscation Platform')
 # Get screen width and height
-screen_width = app.winfo_screenwidth()-9
+screen_width = app.winfo_screenwidth()
 screen_height = app.winfo_screenheight()
-app.geometry(f'{screen_width}x{screen_height}+0+0')
+app.geometry('700x700')
 # app.attributes('-fullscreen', True)
 app.iconbitmap('assets/NewLogo.ico')  # Set icon/logo
 # To exit fullscreen with the Escape key
@@ -59,7 +59,7 @@ for frame in (log_in_frame, sign_up_frame, main_frame, call_frame, logs_frame):
 
 # Define clock font settings with the correct parameters for customtkinter
 clock_font_family = "Helvetica"  # Font family
-clock_font_size = 150  # Font size
+clock_font_size = 120  # Font size
 # clock_font_weight = "bold"  # Font weight
 
 # Main Frame Content - Adjust layout for clock and buttons
@@ -69,7 +69,7 @@ main_frame_content.pack(pady=20, padx=20, expand=True)
 # Load the sponsor's logo image
 logo_image = ctk.CTkImage(light_image=Image.open('assets/ombra-logo.png'), 
                           dark_image=Image.open('assets/ombra-logo-inverted.png'), 
-                          size=(500,500))
+                          size=(250,250))
 
 # Display the logo image above the clock
 logo_label = ctk.CTkLabel(main_frame_content, image=logo_image, text="")
@@ -106,7 +106,7 @@ sign_out_button.pack(pady=(10, 20), padx=20, anchor='e')
 
 # Call Frame Content
 call_label = ctk.CTkLabel(call_frame, text="Enter Callee's Unique ID:")
-call_label.pack(pady=10, padx=20)
+call_label.pack(pady=(30,20) , padx=20)
 
 callee_id_entry = ctk.CTkEntry(call_frame)
 callee_id_entry.pack(pady=10, padx=20)
@@ -120,6 +120,25 @@ def call_user():
 
 call_button = ctk.CTkButton(call_frame, text="Call", command=call_user)
 call_button.pack(pady=10, padx=20)
+
+def combobox_callback(choice):
+    print("combobox dropdown clicked:", choice)
+
+comboboxin = ctk.CTkOptionMenu(call_frame,
+                                     values=["Yeti Mic", "Laptop Mic", "Camera Mic"],
+                                     command=combobox_callback)
+# combobox.grid(row=0, column=0, padx=20, pady=10)
+
+comboboxin.set("Select Input")  # set initial value
+comboboxin.pack(pady=10)
+
+comboboxout = ctk.CTkOptionMenu(call_frame,
+                                     values=["Desktop Speakers", "HyperX Headphones", "Apple Airpods", "Digital Audio"],
+                                     command=combobox_callback)
+# combobox.grid(row=0, column=0, padx=20, pady=10)
+
+comboboxout.set("Select Output")  # set initial value
+comboboxout.pack(pady=10)
 
 # Initialize Start Recording Button but don't pack it initially
 start_recording_button = ctk.CTkButton(call_frame, text="Start Recording", command=start_recording)
@@ -141,18 +160,9 @@ start_recording_button = ctk.CTkButton(call_frame, text="Start Recording", comma
 # drop = tk.OptionMenu( app , clicked , *inputOptions ) 
 # drop.pack() 
 
-
 back_button_call = ctk.CTkButton(call_frame, text="Back to Main", command=lambda: raise_frame(main_frame))
 back_button_call.pack(pady=20, padx=20)
 
-def combobox_callback(choice):
-    print("combobox dropdown clicked:", choice)
-
-combobox = ctk.CTkComboBox(master=app,
-                                     values=["option 1", "option 2"],
-                                     command=combobox_callback)
-combobox.pack(padx=20, pady=10)
-combobox.set("option 2")  # set initial value
 
 # Logs Frame Content - Placeholder content for now
 logs_label = ctk.CTkLabel(logs_frame, text="Call Logs", font=(clock_font_family, 35))
@@ -162,6 +172,8 @@ back_button_logs = ctk.CTkButton(logs_frame, text="Back to Main", command=lambda
 back_button_logs.pack(pady=20, padx=20)
 
 # Modify the Logs Frame Content to include the sample logs table
+
+#Set this up to be window so that its not hardcoded
 def setup_logs_frame():
     # Create the Treeview widget for displaying the table within logs_frame
     logs_table = ttk.Treeview(logs_frame, height=10)
@@ -220,13 +232,13 @@ def sign_up():
 log_in_frame_content = ctk.CTkFrame(log_in_frame,fg_color='transparent')
 log_in_frame_content.pack(pady=20, padx=20, expand=True)
 
-welcome = ctk.CTkLabel(log_in_frame_content, text="Login To Your Account\n\n", font=('Helvetica', 36), fg_color='transparent')
+welcome = ctk.CTkLabel(log_in_frame_content, text="Login To Your Account\n", font=('Helvetica', 36), fg_color='transparent')
 welcome.pack()
 
 # Load the image
 login_image = ctk.CTkImage(light_image=Image.open('assets/login.png'), 
                            dark_image=Image.open('assets/login.png'), 
-                           size=(350,350))
+                           size=(230,230))
 
 # Create a frame for the image and place it to the left
 image_frame = ctk.CTkFrame(log_in_frame_content, fg_color='transparent', width=50, height=50)  # Adjust size as needed
@@ -244,13 +256,13 @@ login_boxes_frame.pack(side='right', fill='both', expand=True)
 # Username Entry
 username_label = ctk.CTkLabel(log_in_frame_content, text="Username:")
 # username_label.pack(pady=(10,0))
-username_entry = ctk.CTkEntry(log_in_frame_content)
+username_entry = ctk.CTkEntry(log_in_frame_content, placeholder_text="Username")
 # username_entry.pack(pady=(0,20))
 
 # Password Entry
 password_label = ctk.CTkLabel(log_in_frame_content, text="Password:")
 # password_label.pack(pady=(10,0))
-password_entry = ctk.CTkEntry(log_in_frame_content, show="*")
+password_entry = ctk.CTkEntry(log_in_frame_content, placeholder_text="Password", show="*")
 # password_entry.pack(pady=(0,20))
 
 # Sign In Button
@@ -261,12 +273,12 @@ sign_in_button = ctk.CTkButton(log_in_frame_content, text="Sign In", command=sig
 sign_up_button = ctk.CTkButton(log_in_frame_content, text="Create Account", command=lambda: raise_frame(sign_up_frame))
 # sign_up_button.pack(pady=(10, 0))
 
-username_label.pack(in_=login_boxes_frame, pady=(30,0))
-username_entry.pack(in_=login_boxes_frame, pady=(0,0))
-password_label.pack(in_=login_boxes_frame, pady=(0,0))
-password_entry.pack(in_=login_boxes_frame, pady=(0,20))
+# username_label.pack(in_=login_boxes_frame, pady=(30,0))
+username_entry.pack(in_=login_boxes_frame, pady=(20,0))
+# password_label.pack(in_=login_boxes_frame, pady=(0,0))
+password_entry.pack(in_=login_boxes_frame, pady=(20,30))
 sign_in_button.pack(in_=login_boxes_frame)
-sign_up_button.pack(in_=login_boxes_frame, pady=(40, 0))
+sign_up_button.pack(in_=login_boxes_frame, pady=(30, 0))
 
 # Setting up the sign_up_frame
 sign_up_frame_content = ctk.CTkFrame(sign_up_frame, fg_color='transparent')
