@@ -8,6 +8,8 @@ from datetime import datetime  # Import datetime to fetch the current time
 # from tkinter import PhotoImage
 from PIL import Image
 import database
+import threading
+from srtp import listen_for_conn
 
 
 # Initialize the main application window
@@ -211,6 +213,7 @@ def sign_in():
     password = password_entry.get()
     if(database.login(username,password)):
         raise_frame(main_frame)
+        threading.Thread(target=listen_for_conn, daemon=True).start()
     else:
         messagebox.showinfo("Login Attempt Failed", f"The username or password you entered is incorrect.")
         password_entry.delete(0, tk.END)
