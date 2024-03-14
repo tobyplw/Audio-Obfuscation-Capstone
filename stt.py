@@ -77,11 +77,14 @@ def start_speech_to_text_transcription(update_textbox_callback, stop_event):
         # start microphone
         microphone.start()
 
-        if stop_event.is_set():
+        # Use a loop to periodically check the stop condition
+        while not stop_event.is_set():
+            sleep(0.1)  # Wait briefly before checking again to reduce CPU usage
+
         # Wait for the microphone to close
-            microphone.finish()
+        microphone.finish()
         # Indicate that we've finished
-            dg_connection.finish()
+        dg_connection.finish()
         return
 
     except Exception as e:
