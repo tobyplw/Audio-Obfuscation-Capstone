@@ -49,9 +49,9 @@ def create_user (username, password):
         }
     Users.insert_one(new_user)
 
-def get_externalPort(socket):
-    externalPort = socket.getsockname()[1]
-    return externalPort
+# def get_externalPort(socket):
+#     externalPort = socket.getsockname()[1]
+#     return 1234
 
 def update_externalPort(socket, username): 
     externalPort = get_externalPort(socket)
