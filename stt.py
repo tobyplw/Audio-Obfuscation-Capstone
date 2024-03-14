@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 import logging, verboselogs
 from time import sleep
+from shared import stop_transcription_event
 
 from deepgram import (
     DeepgramClient,
@@ -13,7 +14,7 @@ from deepgram import (
 
 load_dotenv()
 
-def start_speech_to_text_transcription(update_textbox_callback):
+def start_speech_to_text_transcription(update_textbox_callback, stop_event):
     try:
         # example of setting up a client config. logging values: WARNING, VERBOSE, DEBUG, SPAM
         # config = DeepgramClientOptions(
@@ -76,23 +77,13 @@ def start_speech_to_text_transcription(update_textbox_callback):
         # start microphone
         microphone.start()
 
-        # wait until finished
-        input("Press Enter to stop recording...\n\n")
-
+        if stop_event.is_set():
         # Wait for the microphone to close
-        microphone.finish()
-
+            microphone.finish()
         # Indicate that we've finished
-        dg_connection.finish()
-
-        print("Finished")
-        # sleep(30)  # wait 30 seconds to see if there is any additional socket activity
-        # print("Really done!")
+            dg_connection.finish()
+        return
 
     except Exception as e:
         print(f"Could not open socket: {e}")
         return
-
-
-if __name__ == "__main__":
-    main()

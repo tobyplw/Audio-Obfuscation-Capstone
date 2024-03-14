@@ -6,9 +6,10 @@ from tkinter import messagebox  # Import messagebox for showing dialog messages
 from tkinter import ttk  # Import ttk module for Treeview
 from datetime import datetime  # Import datetime to fetch the current time
 from PIL import Image # from tkinter import PhotoImage
-from threading import Thread
+from threading import Thread, Event
 import database
-import stt
+from shared import stop_transcription_event
+from stt import start_speech_to_text_transcription
 
 
 # Initialize the main application window
@@ -243,24 +244,38 @@ transcribe_textbox.pack(pady=10, padx=20, expand=True, fill='both')
 transcribe_textbox.configure(state= "disabled")
 
 def update_transcribe_textbox(text):
-    # Function to safely update the transcribe_textbox with new text
-    # Implement a method to update the textbox content here
-    # If direct manipulation is not supported in disabled state, you might skip the disable step or find an alternative solution
-    transcribe_textbox.configure(state="normal")  # Temporarily enable the textbox to update text
-    transcribe_textbox.insert(text)  # Append new text here
-    transcribe_textbox.configure(state="disabled")  # Disable again to prevent user editing
+    def callback():
+        transcribe_textbox.configure(state="normal")
+        transcribe_textbox.insert(tk.END,text)
+        transcribe_textbox.configure(state="disabled")
+    app.after(0, callback)
 
 def start_transcription_thread():
     # Start the speech-to-text process in a separate thread to keep UI responsive
-    transcription_thread = Thread(target=stt.start_speech_to_text_transcription, args=(update_transcribe_textbox,))
+    transcription_thread = Thread(target=start_speech_to_text_transcription, args=(update_transcribe_textbox, stop_transcription_event))
     transcription_thread.start()
 
 def start_transcription():
-    messagebox.showinfo("Transcription", "Starting transcription...")
+    stop_transcription_event.clear()  # Ensure the stop event is clear at start
+    stop_transcription_button.configure(state="normal")  # Enable the Stop button
+    start_transcription_button.configure(state="disabled")  # Optionally disable the Start button
     start_transcription_thread()
+
+
+def stop_transcription():
+    stop_transcription_event.set()  # Signal the transcription thread to stop
+    stop_transcription_button.configure(state="disabled")  # Disable the Stop button
+    start_transcription_button.configure(state="normal")  # Re-enable the Start button
+
+# Configure the Stop button's command
+
 
 start_transcription_button = ctk.CTkButton(transcribe_frame, text="Start", command=start_transcription)
 start_transcription_button.pack(pady=10, padx=20)
+
+stop_transcription_button = ctk.CTkButton(transcribe_frame, text="Stop", state="disabled")
+stop_transcription_button.pack(side="left", pady=10, padx=20)
+stop_transcription_button.configure(command=stop_transcription)
 
 back_button_transcribe = ctk.CTkButton(transcribe_frame, text="Back to Main", command=lambda: raise_frame(main_frame))
 back_button_transcribe.pack(pady=20, padx=20)
