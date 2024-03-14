@@ -10,10 +10,10 @@ from deepgram import (
     Microphone,
 )
 
-
 load_dotenv()
 
-def start_speech_to_text_transcription(update_textbox_callback):
+
+def main():
     try:
         # example of setting up a client config. logging values: WARNING, VERBOSE, DEBUG, SPAM
         # config = DeepgramClientOptions(
@@ -30,8 +30,9 @@ def start_speech_to_text_transcription(update_textbox_callback):
 
         def on_message(self, result, **kwargs):
             sentence = result.channel.alternatives[0].transcript
-            if len(sentence) > 0:
-                update_textbox_callback(f"Speaker: {sentence}\n")
+            if len(sentence) == 0:
+                return
+            print(f"speaker: {sentence}")
 
         def on_metadata(self, metadata, **kwargs):
             print(f"\n\n{metadata}\n\n")
