@@ -16,13 +16,7 @@ load_dotenv()
 
 def start_speech_to_text_transcription(update_textbox_callback, stop_event):
     try:
-        # example of setting up a client config. logging values: WARNING, VERBOSE, DEBUG, SPAM
-        # config = DeepgramClientOptions(
-        #     verbose=logging.DEBUG, options={"keepalive": "true"}
-        # )
-        # deepgram: DeepgramClient = DeepgramClient("", config)
-        # otherwise, use default config
-        deepgram: DeepgramClient = DeepgramClient()
+        deepgram: DeepgramClient = DeepgramClient(api_key="5e31c0c3ca3a70e248b06ebc0917f9c8571f3d94")
 
         dg_connection = deepgram.listen.live.v("1")
 
@@ -34,15 +28,6 @@ def start_speech_to_text_transcription(update_textbox_callback, stop_event):
             if len(sentence) > 0:
                 update_textbox_callback(f"Speaker: {sentence}\n")
 
-        def on_metadata(self, metadata, **kwargs):
-            print(f"\n\n{metadata}\n\n")
-
-        def on_speech_started(self, speech_started, **kwargs):
-            print(f"\n\n{speech_started}\n\n")
-
-        def on_utterance_end(self, utterance_end, **kwargs):
-            print(f"\n\n{utterance_end}\n\n")
-
         def on_error(self, error, **kwargs):
             print(f"\n\n{error}\n\n")
 
@@ -51,9 +36,6 @@ def start_speech_to_text_transcription(update_textbox_callback, stop_event):
 
         dg_connection.on(LiveTranscriptionEvents.Open, on_open)
         dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
-        dg_connection.on(LiveTranscriptionEvents.Metadata, on_metadata)
-        dg_connection.on(LiveTranscriptionEvents.SpeechStarted, on_speech_started)
-        dg_connection.on(LiveTranscriptionEvents.UtteranceEnd, on_utterance_end)
         dg_connection.on(LiveTranscriptionEvents.Error, on_error)
         dg_connection.on(LiveTranscriptionEvents.Close, on_close)
 
