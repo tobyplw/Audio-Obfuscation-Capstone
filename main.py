@@ -267,14 +267,17 @@ def stop_transcription():
     stop_transcription_button.configure(state="disabled")  # Disable the Stop button
     start_transcription_button.configure(state="normal")  # Re-enable the Start button
 
-# Configure the Stop button's command
 
+button_container_frame = ctk.CTkFrame(transcribe_frame)
+button_container_frame.pack(pady=10, padx=20)  # Adjust padding as needed
 
-start_transcription_button = ctk.CTkButton(transcribe_frame, text="Start", command=start_transcription)
-start_transcription_button.pack(pady=10, padx=20)
+# Modify the start_transcription_button to be packed inside button_container_frame
+start_transcription_button = ctk.CTkButton(button_container_frame, text="Start", command=start_transcription)
+start_transcription_button.pack(side='left', padx=5)  # Pack it on the left, add some padding for spacing
 
-stop_transcription_button = ctk.CTkButton(transcribe_frame, text="Stop", state="disabled")
-stop_transcription_button.pack(side="left", pady=10, padx=20)
+# Modify the stop_transcription_button similarly
+stop_transcription_button = ctk.CTkButton(button_container_frame, text="Stop", state="disabled")
+stop_transcription_button.pack(side='left', padx=5)  # Pack it next to the start button
 stop_transcription_button.configure(command=stop_transcription)
 
 back_button_transcribe = ctk.CTkButton(transcribe_frame, text="Back to Main", command=lambda: raise_frame(main_frame))

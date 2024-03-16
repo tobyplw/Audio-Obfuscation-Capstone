@@ -64,10 +64,6 @@ def start_speech_to_text_transcription(update_textbox_callback, stop_event):
             encoding="linear16",
             channels=1,
             sample_rate=16000,
-            # To get UtteranceEnd, the following must be set:
-            interim_results=True,
-            utterance_end_ms="1000",
-            vad_events=True,
         )
         dg_connection.start(options)
 
