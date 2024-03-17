@@ -5,9 +5,11 @@ import tkinter as tk
 from tkinter import messagebox  # Import messagebox for showing dialog messages
 from tkinter import ttk  # Import ttk module for Treeview
 from datetime import datetime  # Import datetime to fetch the current time
-# from tkinter import PhotoImage
-from PIL import Image
+from PIL import Image # from tkinter import PhotoImage
+from threading import Thread, Event
 import database
+from shared import stop_transcription_event
+from stt import start_speech_to_text_transcription
 
 
 # Initialize the main application window
@@ -53,8 +55,10 @@ sign_up_frame = ctk.CTkFrame(app)
 main_frame = ctk.CTkFrame(app)
 call_frame = ctk.CTkFrame(app)
 logs_frame = ctk.CTkFrame(app)  # Frame for logs
+transcribe_frame = ctk.CTkFrame(app)
 
-for frame in (log_in_frame, sign_up_frame, main_frame, call_frame, logs_frame):
+
+for frame in (log_in_frame, sign_up_frame, main_frame, call_frame, logs_frame, transcribe_frame):
     frame.grid(row=0, column=0, sticky='nsew')
 
 # Define clock font settings with the correct parameters for customtkinter
@@ -90,6 +94,10 @@ start_call_button.pack(side='left', padx=10, pady=10, anchor='center')
 
 access_logs_button = ctk.CTkButton(button_frame, text="Access Logs", command=lambda: raise_frame(logs_frame), width=200, height=40)
 access_logs_button.pack(side='left', padx=10, pady=10, anchor='center')
+
+transcribe_button = ctk.CTkButton(button_frame, text="Transcribe", command=lambda: raise_frame(transcribe_frame), width=200, height=40)
+transcribe_button.pack(side='left', padx=10, pady=10, anchor='center')
+
 
 button = ctk.CTkButton(button_frame, text='Light', command = lambda: ctk.set_appearance_mode('light'), width=200, height=40)
 button.pack(side='left', padx=10, pady=10, anchor='center')
@@ -226,6 +234,54 @@ def sign_up():
         raise_frame(log_in_frame)
     else:
         messagebox.showinfo("Signup Attempt", f"Passwords do not match\nPlease try again")
+
+# Transcribe Frame Content
+transcribe_label = ctk.CTkLabel(transcribe_frame, text="Transcription:", font=(clock_font_family, 20))
+transcribe_label.pack(pady=20, padx=20)
+
+transcribe_textbox = ctk.CTkTextbox(transcribe_frame, height=400, width=500)
+transcribe_textbox.pack(pady=10, padx=20, expand=True, fill='both')
+transcribe_textbox.configure(state= "disabled")
+
+def update_transcribe_textbox(text):
+    def callback():
+        transcribe_textbox.configure(state="normal")
+        transcribe_textbox.insert(tk.END,text)
+        transcribe_textbox.configure(state="disabled")
+    app.after(0, callback)
+
+def start_transcription_thread():
+    # Start the speech-to-text process in a separate thread to keep UI responsive
+    transcription_thread = Thread(target=start_speech_to_text_transcription, args=(update_transcribe_textbox, stop_transcription_event))
+    transcription_thread.start()
+
+def start_transcription():
+    stop_transcription_event.clear()  # Ensure the stop event is clear at start
+    stop_transcription_button.configure(state="normal")  # Enable the Stop button
+    start_transcription_button.configure(state="disabled")  # Optionally disable the Start button
+    start_transcription_thread()
+
+
+def stop_transcription():
+    stop_transcription_event.set()  # Signal the transcription thread to stop
+    stop_transcription_button.configure(state="disabled")  # Disable the Stop button
+    start_transcription_button.configure(state="normal")  # Re-enable the Start button
+
+
+button_container_frame = ctk.CTkFrame(transcribe_frame)
+button_container_frame.pack(pady=10, padx=20)  # Adjust padding as needed
+
+# Modify the start_transcription_button to be packed inside button_container_frame
+start_transcription_button = ctk.CTkButton(button_container_frame, text="Start", command=start_transcription)
+start_transcription_button.pack(side='left', padx=5)  # Pack it on the left, add some padding for spacing
+
+# Modify the stop_transcription_button similarly
+stop_transcription_button = ctk.CTkButton(button_container_frame, text="Stop", state="disabled")
+stop_transcription_button.pack(side='left', padx=5)  # Pack it next to the start button
+stop_transcription_button.configure(command=stop_transcription)
+
+back_button_transcribe = ctk.CTkButton(transcribe_frame, text="Back to Main", command=lambda: raise_frame(main_frame))
+back_button_transcribe.pack(pady=20, padx=20)
 
 
 # Setting up the log_in_frame
