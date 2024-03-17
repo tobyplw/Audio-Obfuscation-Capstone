@@ -30,12 +30,29 @@ def get_user_devices(audio):
     # Separate input and output devices into two lists
     input_devices = []
     output_devices = []
-    for i in range(num_devices):
+
+    seen_input_devices = set()  # Track seen input device names
+    seen_output_devices = set()  # Track seen output device names
+
+    virtual_device_keywords = ['Virtual', 'Streaming', 'Broadcast', 'NVIDIA', 'DroidCam', 'RTX-Audio', 'Wave']
+
+    for i in range(audio.get_device_count()):
         device = audio.get_device_info_by_index(i)
-        if device['maxInputChannels'] > 0 and device['maxOutputChannels'] == 0 and device['maxInputChannels'] == CHANNELS:
+        device_name = device['name']
+
+        # Skip virtual devices based on keywords
+        if any(keyword in device_name for keyword in virtual_device_keywords):
+            continue
+
+        # Filter and add input devices, avoiding duplicates
+        if device['maxInputChannels'] >= CHANNELS and device_name not in seen_input_devices:
             input_devices.append(device)
-        elif device['maxInputChannels'] == 0 and device['maxOutputChannels'] > 0:
+            seen_input_devices.add(device_name)  # Mark this device name as seen
+
+        # Filter and add output devices, avoiding duplicates
+        if device['maxOutputChannels'] >= CHANNELS and device_name not in seen_output_devices:
             output_devices.append(device)
+            seen_output_devices.add(device_name)  # Mark this device name as seen
 
     # Prompt the user for input device
     for i in range(len(input_devices)):
@@ -284,6 +301,15 @@ elif name == 'toby':
     receiving_ip = socket.gethostbyname(hostname)
 
 elif name == 'shafin':
+    destination_ip = '23.244.54.2'
+    destination_tcp_port = 2324
+    destination_udp_port = 2323
+    receiving_tcp_port = 9998
+    receiving_udp_port = 9999
+    hostname = socket.gethostname()
+    receiving_ip = socket.gethostbyname(hostname)
+
+elif name == 'azwad':
     destination_ip = '23.244.54.2'
     destination_tcp_port = 2324
     destination_udp_port = 2323
