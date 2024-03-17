@@ -6,10 +6,13 @@ from tkinter import messagebox  # Import messagebox for showing dialog messages
 from tkinter import ttk  # Import ttk module for Treeview
 from datetime import datetime  # Import datetime to fetch the current time
 from PIL import Image # from tkinter import PhotoImage
-from threading import Thread, Event
+import threading
+from threading import Thread
 import database
 from shared import stop_transcription_event
 from stt import start_speech_to_text_transcription
+from srtp import listen_for_conn
+
 
 
 # Initialize the main application window
@@ -217,10 +220,15 @@ setup_logs_frame()
 def sign_in():
     username = username_entry.get()
     password = password_entry.get()
-    if(database.login(username,password)):
+    if(database.login(username, password)):
         raise_frame(main_frame)
+        # Assuming you have set your receiving IP and port somewhere
+        receiving_ip = "127.0.0.1"  # This should be your actual receiving IP
+        receiving_port = 9999  # This should be your actual receiving port
+        # Start listening in a separate thread
+        threading.Thread(target=listen_for_conn, args=(receiving_ip, receiving_port)).start()
     else:
-        messagebox.showinfo("Login Attempt Failed", f"The username or password you entered is incorrect.")
+        messagebox.showinfo("Login Attempt Failed", "The username or password you entered is incorrect.")
         password_entry.delete(0, tk.END)
     
 
