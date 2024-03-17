@@ -10,6 +10,7 @@ import errno
 import threading
 from vocoder import Vocoder
 import numpy as np
+import database as db
 
 
 DEBUG = 0
@@ -74,6 +75,7 @@ def get_user_devices(audio):
 
 def get_user_input():
     audio  = pyaudio.PyAudio()
+    CHANNELS = 1 
 
     input_devices = []
 
@@ -93,6 +95,7 @@ def get_user_input():
         if device['maxInputChannels'] >= CHANNELS and device_name not in seen_input_devices:
             input_devices.append(device)
             seen_input_devices.add(device_name)  # Mark this device name as seen
+    audio.terminate()
     return input_devices
 
 def get_user_output():
@@ -118,6 +121,7 @@ def get_user_output():
             seen_output_devices.add(device_name)  # Mark this device name as seen
 
     # Return devices selected by user
+    audio.terminate()
     return output_devices
 
 
@@ -227,7 +231,6 @@ def listen(udp_socket, listen_stream):
     rx_session = Session(policy=rx_policy)
     previous_time = 0
     prev_play_time = 0
-    print("Recieving audio on " + receiving_ip)
     try: 
         while True:
             try:
@@ -331,95 +334,50 @@ def call_user(destination_ip, destination_port):
 
 
 
-name = sys.argv[1].lower()
-if name == 'tyler':
-    destination_ip = '74.135.7.54'
-    destination_tcp_port = 9998  # Replace with the destination port
-    destination_udp_port = 9999  # Replace with the destination port
-    receiving_tcp_port = 2324
-    receiving_udp_port = 2323
-    receiving_ip = '10.20.45.43' # Tyler local ipv4
-
-elif name == 'toby':
-    destination_ip = '23.244.15.222'
-    destination_tcp_port = 2324
+def call (user_input_device, user_output_device,destination_ip):
     destination_udp_port = 2323
-    receiving_tcp_port = 9998
     receiving_udp_port = 9999
     hostname = socket.gethostname()
     receiving_ip = socket.gethostbyname(hostname)
 
-elif name == 'shafin':
-    destination_ip = '23.244.54.2'
-    destination_tcp_port = 2324
-    destination_udp_port = 2323
-    receiving_tcp_port = 9998
-    receiving_udp_port = 9999
-    hostname = socket.gethostname()
-    receiving_ip = socket.gethostbyname(hostname)
-
-elif name == 'send': #for localhost testing
-    destination_ip = '127.0.0.1'
-    receiving_ip = '127.0.0.1'
-    destination_port = 2323
-    receiving_port = 9999
-
-elif name == 'receive': #for localhost testing
-    receiving_ip = '127.0.0.1'
-    destination_port = 9999  
-    destination_ip = '127.0.0.1'
-    receiving_port = 2323
-
-# Create a UDP socket
-udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-# fcntl.fcntl(udp_socket, fcntl.F_SETFL, os.O_NONBLOCK)
+    # Create a UDP socket
+    udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    # fcntl.fcntl(udp_socket, fcntl.F_SETFL, os.O_NONBLOCK)
 
 
-# Bind the socket to a specific port
-udp_socket.bind((receiving_ip, receiving_udp_port))
+    # Bind the socket to a specific port
+    udp_socket.bind((receiving_ip, receiving_udp_port))
 
-audio = pyaudio.PyAudio()
+    audio = pyaudio.PyAudio()
 
-user_input_device, user_output_device = get_user_devices(audio)
+    user_input_device, user_output_device = get_user_devices(audio)
 
-record_stream = audio.open(format=FORMAT_TALK, 
+    record_stream = audio.open(format=FORMAT_TALK, 
+                        rate=RATE, 
+                        channels=CHANNELS,
+                        frames_per_buffer=CHUNK_SIZE_TALK,
+                        input=True,
+                        output=False,
+                        input_device_index=user_input_device)
+
+    listen_stream = audio.open(format=FORMAT_LISTEN, 
+                    channels=CHANNELS, 
                     rate=RATE, 
-                    channels=CHANNELS,
-                    frames_per_buffer=CHUNK_SIZE_TALK,
-                    input=True,
-                    output=False,
-                    input_device_index=user_input_device)
+                    output=True, 
+                    input=False,
+                    frames_per_buffer=CHUNK_SIZE_SEND,
+                    output_device_index=user_output_device)
 
-listen_stream = audio.open(format=FORMAT_LISTEN, 
-                  channels=CHANNELS, 
-                  rate=RATE, 
-                  output=True, 
-                  input=False,
-                  frames_per_buffer=CHUNK_SIZE_SEND,
-                  output_device_index=user_output_device)
+    listen_thread = threading.Thread(target=listen, args=(udp_socket, listen_stream))
+    talk_thread = threading.Thread(target=talk, args=(udp_socket, record_stream, destination_ip, destination_udp_port))
 
-listen_thread = threading.Thread(target=listen, args=(udp_socket, listen_stream))
-talk_thread = threading.Thread(target=talk, args=(udp_socket, record_stream, destination_ip, destination_udp_port))
+    listening_thread = threading.Thread(target=listen_for_conn)
+    # listening_thread.start()
 
-listening_thread = threading.Thread(target=listen_for_conn)
-# listening_thread.start()
-
-# while True:
-#     user_input = input('Enter the user id of the person you want to call: ')
-#     if user_input == 'call':
-#         call_user(destination_ip, destination_tcp_port)
-
-
-
-if name == 'receive':
-    listen_thread.start()
-elif name == 'send':
-    talk_thread.start()
-else:
-    listen_thread.start()
-    talk_thread.start()
-
-
+    # while True:
+    #     user_input = input('Enter the user id of the person you want to call: ')
+    #     if user_input == 'call':
+    #         call_user(destination_ip, destination_tcp_port)
 
 
 

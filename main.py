@@ -11,7 +11,8 @@ from threading import Thread
 import database
 from shared import stop_transcription_event
 from stt import start_speech_to_text_transcription
-from srtp import listen_for_conn
+from call import get_user_input,get_user_output,call,listen_for_conn
+
 
 
 
@@ -92,7 +93,12 @@ update_clock()  # Initialize clock update
 button_frame = ctk.CTkFrame(main_frame_content)
 button_frame.pack(expand=True)
 
-start_call_button = ctk.CTkButton(button_frame, text="Start Call", command=lambda: raise_frame(call_frame), width=200, height=40)
+def on_start_call_button_clicked():
+    raise_frame(call_frame)  # Show the call frame
+    update_input_devices_combobox()  # Update the devices combobox
+    update_output_devices_combobox()
+
+start_call_button = ctk.CTkButton(button_frame, text="Start Call", command=on_start_call_button_clicked, width=200, height=40)
 start_call_button.pack(side='left', padx=10, pady=10, anchor='center')
 
 access_logs_button = ctk.CTkButton(button_frame, text="Access Logs", command=lambda: raise_frame(logs_frame), width=200, height=40)
@@ -104,6 +110,7 @@ transcribe_button.pack(side='left', padx=10, pady=10, anchor='center')
 
 button = ctk.CTkButton(button_frame, text='Light', command = lambda: ctk.set_appearance_mode('light'), width=200, height=40)
 button.pack(side='left', padx=10, pady=10, anchor='center')
+
 
 def sign_out():
     username_entry.delete(0, tk.END)
@@ -135,17 +142,13 @@ call_button.pack(pady=10, padx=20)
 def combobox_callback(choice):
     print("combobox dropdown clicked:", choice)
 
-comboboxin = ctk.CTkOptionMenu(call_frame,
-                                     values=["Yeti Mic", "Laptop Mic", "Camera Mic"],
-                                     command=combobox_callback)
+comboboxin = ctk.CTkOptionMenu(call_frame, values=[], command=combobox_callback, width=200)
 # combobox.grid(row=0, column=0, padx=20, pady=10)
 
 comboboxin.set("Select Input")  # set initial value
 comboboxin.pack(pady=10)
 
-comboboxout = ctk.CTkOptionMenu(call_frame,
-                                     values=["Desktop Speakers", "HyperX Headphones", "Apple Airpods", "Digital Audio"],
-                                     command=combobox_callback)
+comboboxout = ctk.CTkOptionMenu(call_frame, values=[], command=combobox_callback)
 # combobox.grid(row=0, column=0, padx=20, pady=10)
 
 comboboxout.set("Select Output")  # set initial value
@@ -153,6 +156,45 @@ comboboxout.pack(pady=10)
 
 # Initialize Start Recording Button but don't pack it initially
 start_recording_button = ctk.CTkButton(call_frame, text="Start Recording", command=start_recording)
+
+def update_input_devices_combobox():
+    global comboboxin  # Use global to reference the combobox variable outside the function
+
+    input_devices = get_user_input()  # Call your function to get the input devices list
+    device_names = [device['name'] for device in input_devices]  # Extract device names
+
+    # Destroy the existing combobox (if it exists)
+    if 'comboboxin' in globals():
+        comboboxin.destroy()
+
+    # Recreate the combobox with the new values
+    comboboxin = ctk.CTkOptionMenu(call_frame, values=device_names, command=combobox_callback)
+    comboboxin.set("Select Input")  # Optionally set a default value
+    comboboxin.pack(pady=10)
+
+    if device_names:  # Optionally set the first device as selected, if the list is not empty
+        comboboxin.set(device_names[0])
+
+
+def update_output_devices_combobox():
+    global comboboxout  # Use global to reference the combobox variable outside the function
+
+    output_devices = get_user_output()  # Call your function to get the output devices list
+    device_names = [device['name'] for device in output_devices]  # Extract device names
+
+    # Destroy the existing combobox (if it exists)
+    if 'comboboxout' in globals():
+        comboboxout.destroy()
+
+    # Recreate the combobox with the new values
+    comboboxout = ctk.CTkOptionMenu(call_frame, values=device_names, command=combobox_callback)
+    comboboxout.set("Select Output")  # Optionally set a default value
+    comboboxout.pack(pady=10)
+
+    if device_names:  # Optionally set the first device as selected, if the list is not empty
+        comboboxout.set(device_names[0])
+
+
 
 # # Dropdown menu options 
 # inputOptions = [ 
@@ -227,6 +269,7 @@ def sign_in():
         receiving_port = 9999  # This should be your actual receiving port
         # Start listening in a separate thread
         threading.Thread(target=listen_for_conn, args=(receiving_ip, receiving_port)).start()
+
     else:
         messagebox.showinfo("Login Attempt Failed", "The username or password you entered is incorrect.")
         password_entry.delete(0, tk.END)
