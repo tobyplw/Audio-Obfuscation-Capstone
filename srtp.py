@@ -5,10 +5,10 @@ import sys
 from pylibsrtp import Policy, Session
 import pyaudio
 import random
-import os, fcntl
+# import os, fcntl
 import errno
 import threading
-from vocoder import Vocoder
+# from vocoder import Vocoder
 import numpy as np
 
 DEBUG = 0
@@ -125,7 +125,7 @@ def incoming_buffer(buffer, rtp, seq_number, time_delta = 0):
 def talk(udp_socket, record_stream, destination_ip, destination_port):
     ssrc = 5678 
     payload_type = 0  
-    voc = Vocoder(create_random_seed = False, rate = RATE, chunk = CHUNK_SIZE_TALK, distortion=0.10)
+    # voc = Vocoder(create_random_seed = False, rate = RATE, chunk = CHUNK_SIZE_TALK, distortion=0.10)
 
     # protect RTP
     key = (b'\x00' * 30) #should change the key
@@ -142,8 +142,8 @@ def talk(udp_socket, record_stream, destination_ip, destination_port):
 
 
             #in_data = voc.transform(in_data)
-            pcm_data = voc.float2pcm(in_data)
-            data = pcm_data.tobytes('C')
+            # pcm_data = voc.float2pcm(in_data)
+            # data = pcm_data.tobytes('C')
     
             packet = rtp_header + data
             srtp = tx_session.protect(packet)
@@ -209,7 +209,7 @@ def listen(udp_socket, listen_stream):
         listen_stream.close()
 
 
-def listen_for_conn():
+def listen_for_conn(receiving_ip, receiving_port):
     listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     listen_socket.bind((receiving_ip, receiving_port))
     listen_socket.listen(1)
@@ -281,24 +281,6 @@ elif name == 'toby':
     receiving_udp_port = 9999
     hostname = socket.gethostname()
     receiving_ip = socket.gethostbyname(hostname)
-
-elif name == 'shafin':
-    destination_ip = '23.244.54.2'
-    destination_tcp_port = 2324
-    destination_udp_port = 2323
-    receiving_tcp_port = 9998
-    receiving_udp_port = 9999
-    # hostname = socket.gethostname()
-    receiving_ip = '192.168.0.227'
-
-elif name == 'azwad':
-    destination_ip = '65.60.183.99'
-    destination_tcp_port = 2324
-    destination_udp_port = 2323
-    receiving_tcp_port = 9998
-    receiving_udp_port = 9999
-    # hostname = socket.gethostname()
-    receiving_ip = '192.168.0.12'
 
 elif name == 'send': #for localhost testing
     destination_ip = '127.0.0.1'
