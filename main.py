@@ -171,11 +171,12 @@ def update_input_devices_combobox():
 
     # Recreate the combobox with the new values
     comboboxin = ctk.CTkOptionMenu(call_frame, values=device_names, command=combobox_callback)
-    comboboxin.set("Select Input")  # Optionally set a default value
+    # comboboxin.set("Select Input")  # Optionally set a default value
     comboboxin.pack(pady=10)
+    comboboxin.set("Select Input")  # Optionally set a default value
 
-    if device_names:  # Optionally set the first device as selected, if the list is not empty
-        comboboxin.set(device_names[0])
+    # if device_names:  # Optionally set the first device as selected, if the list is not empty
+    #     comboboxin.set(device_names[0])
 
 
 def update_output_devices_combobox():
@@ -193,27 +194,10 @@ def update_output_devices_combobox():
     comboboxout.set("Select Output")  # Optionally set a default value
     comboboxout.pack(pady=10)
 
-    if device_names:  # Optionally set the first device as selected, if the list is not empty
-        comboboxout.set(device_names[0])
+    # if device_names:  # Optionally set the first device as selected, if the list is not empty
+    #     comboboxout.set(device_names[0])
 
 
-
-# # Dropdown menu options 
-# inputOptions = [ 
-#     "yetiMic", 
-#     "LaptopMic", 
-#     "CameraMic", 
-# ] 
-  
-# # datatype of menu text 
-# clicked = StringVar() 
-  
-# # initial menu text 
-# clicked.set( "yetiMic" ) 
-  
-# # Create Dropdown menu 
-# drop = tk.OptionMenu( app , clicked , *inputOptions ) 
-# drop.pack() 
 
 back_button_call = ctk.CTkButton(call_frame, text="Back to Main", command=lambda: raise_frame(main_frame))
 back_button_call.pack(pady=20, padx=20)
