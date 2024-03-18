@@ -4,7 +4,7 @@ import bcrypt
 import certifi
 import public_ip as ip
 import socket
-from datetime import datetime
+from datetime import date, datetime
 
 #Connection String
 uri = "mongodb+srv://allatt_audio:Capstone@capstone.v2sgpm7.mongodb.net/?retryWrites=true&w=majority"
@@ -132,3 +132,4 @@ def get_calls(username):
         call_logs.append(call_log)  # Add the tuple to the list
 
     return call_logs
+

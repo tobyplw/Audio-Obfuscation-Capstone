@@ -9,6 +9,7 @@ from PIL import Image # from tkinter import PhotoImage
 import threading
 from threading import Thread
 import database
+import shared
 from shared import stop_transcription_event
 from stt import start_speech_to_text_transcription
 from call import get_user_input,get_user_output,call,listen_for_conn
@@ -97,6 +98,7 @@ def on_start_call_button_clicked():
     raise_frame(call_frame)  # Show the call frame
     update_input_devices_combobox()  # Update the devices combobox
     update_output_devices_combobox()
+
 
 start_call_button = ctk.CTkButton(button_frame, text="Start Call", command=on_start_call_button_clicked, width=200, height=40)
 start_call_button.pack(side='left', padx=10, pady=10, anchor='center')
@@ -227,7 +229,7 @@ back_button_logs.pack(pady=20, padx=20)
 # Modify the Logs Frame Content to include the sample logs table
 
 #Set this up to be window so that its not hardcoded
-def setup_logs_frame():
+def setup_logs_frame(username):
     # Create the Treeview widget for displaying the table within logs_frame
     logs_table = ttk.Treeview(logs_frame, height=10)
     logs_table.pack(expand=True, fill='both', side='top')
@@ -252,11 +254,12 @@ def setup_logs_frame():
     logs_table.heading("call_transcript", text="Call Recording", anchor=tk.W)
 
     #CHANGE THE USERNAME HERE
-    for log in database.get_calls("azwad"):
+    print("current user is " +  username)
+    for log in database.get_calls(username):
         logs_table.insert(parent='', index='end', iid=log[0], text="", values=log)
 
 # Call the setup_logs_frame function to initialize the logs table when the app starts
-setup_logs_frame()
+
 
 # Function to handle the sign-in process (placeholder for actual functionality)
 def sign_in():
@@ -264,11 +267,15 @@ def sign_in():
     password = password_entry.get()
     if(database.login(username, password)):
         raise_frame(main_frame)
+        setup_logs_frame(username)
+        shared.current_user = username
         # Assuming you have set your receiving IP and port somewhere
         receiving_ip = "127.0.0.1"  # This should be your actual receiving IP
         receiving_port = 9999  # This should be your actual receiving port
         # Start listening in a separate thread
-        threading.Thread(target=listen_for_conn, args=(receiving_ip, receiving_port)).start()
+        listen_thread = threading.Thread(target=listen_for_conn, args=(receiving_ip, receiving_port))
+        listen_thread.daemon = True
+        listen_thread.start()
 
     else:
         messagebox.showinfo("Login Attempt Failed", "The username or password you entered is incorrect.")
