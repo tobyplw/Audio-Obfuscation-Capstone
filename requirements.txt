@@ -1,7 +1,14 @@
 dnspython 
 pymongo 
 certifi 
-customtkinter 
+customtkinter
+tkinter 
 bcrypt
 public-ip
 deepgram-sdk
+datetime
+PIL
+pylibsrtp
+pyaudio
+random
+numpy

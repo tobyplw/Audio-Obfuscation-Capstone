@@ -15,7 +15,8 @@ from stt import start_speech_to_text_transcription
 from call import get_user_input,get_user_output,call,listen_for_conn
 
 
-
+global device_name_to_info_mapping
+device_name_to_info_mapping = {}
 
 # Initialize the main application window
 app = ctk.CTk()
@@ -138,11 +139,30 @@ def call_user():
     messagebox.showinfo("Call Authenticated", f"Calling User with ID: {callee_id}")  # Show a dialog box as feedback
     start_recording_button.pack(before=back_button_call, pady=10, padx=20)  # Adjusted to pack before the Back button
 
+# def receive_call():
+#     call_from = "Caller"
+#     # Display a messagebox asking if the user wants to accept the call
+#     accept_call = messagebox.askyesno("Incoming Call", f"You have an incoming call from {call_from}.\nAnswer it?")
+    
+#     if accept_call:
+#         # User accepted the call
+#         print("Call accepted.")
+#         # Here goes accepting call logic
+#     else:
+#         # User denied the call
+#         print("Call denied.")
+#         # Add logic for what happens when a call is denied
+
 call_button = ctk.CTkButton(call_frame, text="Call", command=call_user)
 call_button.pack(pady=10, padx=20)
 
 def combobox_callback(choice):
-    print("combobox dropdown clicked:", choice)
+    # Assuming `shared.py` has been imported as `shared`
+    if choice in device_name_to_info_mapping:
+        shared.input_device = device_name_to_info_mapping[choice]
+        print(f"Device selected: {shared.input_device}")
+    else:
+        print("Selected device not found in mapping.")
 
 comboboxin = ctk.CTkOptionMenu(call_frame, values=[], command=combobox_callback, width=200)
 # combobox.grid(row=0, column=0, padx=20, pady=10)
@@ -160,44 +180,42 @@ comboboxout.pack(pady=10)
 start_recording_button = ctk.CTkButton(call_frame, text="Start Recording", command=start_recording)
 
 def update_input_devices_combobox():
-    global comboboxin  # Use global to reference the combobox variable outside the function
-
-    input_devices = get_user_input()  # Call your function to get the input devices list
+    global comboboxin, device_name_to_info_mapping
+    input_devices = get_user_input()
     device_names = [device['name'] for device in input_devices]  # Extract device names
+    update_device_name_to_info_mapping(input_devices)  # Update the mapping
 
     # Destroy the existing combobox (if it exists)
     if 'comboboxin' in globals():
         comboboxin.destroy()
 
     # Recreate the combobox with the new values
-    comboboxin = ctk.CTkOptionMenu(call_frame, values=device_names, height=40, width= 200, command=combobox_callback)
-    # comboboxin.set("Select Input")  # Optionally set a default value
+    comboboxin = ctk.CTkOptionMenu(call_frame, values=device_names, height=40, width=200, command=combobox_callback)
     comboboxin.pack(pady=10)
     comboboxin.set("Select Input")  # Optionally set a default value
 
-    # if device_names:  # Optionally set the first device as selected, if the list is not empty
-    #     comboboxin.set(device_names[0])
 
 
 def update_output_devices_combobox():
-    global comboboxout  # Use global to reference the combobox variable outside the function
-
-    output_devices = get_user_output()  # Call your function to get the output devices list
+    global comboboxout, device_name_to_info_mapping
+    output_devices = get_user_output()
     device_names = [device['name'] for device in output_devices]  # Extract device names
+    update_device_name_to_info_mapping(output_devices)  # Update the mapping
 
     # Destroy the existing combobox (if it exists)
     if 'comboboxout' in globals():
         comboboxout.destroy()
 
     # Recreate the combobox with the new values
-    comboboxout = ctk.CTkOptionMenu(call_frame, values=device_names, height=40, width= 200, command=combobox_callback)
-    comboboxout.set("Select Output")  # Optionally set a default value
+    comboboxout = ctk.CTkOptionMenu(call_frame, values=device_names, height=40, width=200, command=combobox_callback)
     comboboxout.pack(pady=10)
-
-    # if device_names:  # Optionally set the first device as selected, if the list is not empty
-    #     comboboxout.set(device_names[0])
+    comboboxout.set("Select Output")  # Optionally set a default value
 
 
+def update_device_name_to_info_mapping(devices):
+    global device_name_to_info_mapping
+    for device in devices:
+        device_name_to_info_mapping[device['name']] = device
 
 back_button_call = ctk.CTkButton(call_frame, text="Back to Main", command=lambda: raise_frame(main_frame))
 back_button_call.pack(pady=20, padx=20)
@@ -250,16 +268,20 @@ def sign_in():
     username = username_entry.get()
     password = password_entry.get()
     if(database.login(username, password)):
-        raise_frame(main_frame)
-        setup_logs_frame(username)
+        # Set current user
         shared.current_user = username
+
         # Assuming you have set your receiving IP and port somewhere
         receiving_ip = "127.0.0.1"  # This should be your actual receiving IP
         receiving_port = 9999  # This should be your actual receiving port
+
         # Start listening in a separate thread
         listen_thread = threading.Thread(target=listen_for_conn, args=(receiving_ip, receiving_port))
         listen_thread.daemon = True
         listen_thread.start()
+
+        raise_frame(main_frame)
+        setup_logs_frame(username)
 
     else:
         messagebox.showinfo("Login Attempt Failed", "The username or password you entered is incorrect.")
