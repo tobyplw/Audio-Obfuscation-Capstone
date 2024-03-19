@@ -125,7 +125,7 @@ sign_out_button.pack(pady=(10, 20), padx=20, anchor='e')
 
 
 # Call Frame Content
-call_label = ctk.CTkLabel(call_frame, text="Enter Callee's Unique ID:")
+call_label = ctk.CTkLabel(call_frame, text="Enter Callee's Username:")
 call_label.pack(pady=(30,20) , padx=20)
 
 callee_id_entry = ctk.CTkEntry(call_frame)
@@ -150,7 +150,7 @@ comboboxin = ctk.CTkOptionMenu(call_frame, values=[], command=combobox_callback,
 comboboxin.set("Select Input")  # set initial value
 comboboxin.pack(pady=10)
 
-comboboxout = ctk.CTkOptionMenu(call_frame, values=[], command=combobox_callback)
+comboboxout = ctk.CTkOptionMenu(call_frame, values=[], command=combobox_callback, width=200)
 # combobox.grid(row=0, column=0, padx=20, pady=10)
 
 comboboxout.set("Select Output")  # set initial value
@@ -170,7 +170,7 @@ def update_input_devices_combobox():
         comboboxin.destroy()
 
     # Recreate the combobox with the new values
-    comboboxin = ctk.CTkOptionMenu(call_frame, values=device_names, command=combobox_callback)
+    comboboxin = ctk.CTkOptionMenu(call_frame, values=device_names, height=40, width= 200, command=combobox_callback)
     # comboboxin.set("Select Input")  # Optionally set a default value
     comboboxin.pack(pady=10)
     comboboxin.set("Select Input")  # Optionally set a default value
@@ -190,7 +190,7 @@ def update_output_devices_combobox():
         comboboxout.destroy()
 
     # Recreate the combobox with the new values
-    comboboxout = ctk.CTkOptionMenu(call_frame, values=device_names, command=combobox_callback)
+    comboboxout = ctk.CTkOptionMenu(call_frame, values=device_names, height=40, width= 200, command=combobox_callback)
     comboboxout.set("Select Output")  # Optionally set a default value
     comboboxout.pack(pady=10)
 
