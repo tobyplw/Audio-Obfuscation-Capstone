@@ -1,4 +1,3 @@
-# shared.py
 from threading import Event
 
 current_user = ""
