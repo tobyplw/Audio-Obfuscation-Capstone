@@ -1,0 +1,7 @@
+dnspython 
+pymongo 
+certifi 
+customtkinter 
+bcrypt
+public-ip
+deepgram-sdk
