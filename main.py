@@ -22,6 +22,15 @@ import shared
 import call
 
 
+global input_device_name_to_info_mapping
+input_device_name_to_info_mapping = {}
+
+global output_device_name_to_info_mapping
+output_device_name_to_info_mapping = {}
+
+
+
+
 def check_NAT():
     try:
         nat_type, external_ip, external_port = stun.get_ip_info()
@@ -90,11 +99,9 @@ def handle_error_message(callee_username):
 def handle_call(destination_ip,destination_port, callee_username):
     open_call_window(shared.current_user)
     record_stream, listen_stream = call.start_audio_stream(shared.input_device, shared.output_device)
-    start_call_thread = threading.Thread(target=call.talk, args=(shared.client_socket, record_stream,callee_username, destination_ip, destination_port))
-    listen_call_thread = threading.Thread(target=call.listen, args=(shared.client_socket, listen_stream))
-    start_call_thread.setDaemon(True)
+    start_call_thread = threading.Thread(target=call.talk, args=(shared.client_socket, record_stream,callee_username, destination_ip, destination_port),daemon=True)
+    listen_call_thread = threading.Thread(target=call.listen, args=(shared.client_socket, listen_stream),daemon=True)
     start_call_thread.start()
-    listen_call_thread.setDaemon(True)
     listen_call_thread.start()
 
 
@@ -122,25 +129,11 @@ def incoming_call_request(callee_username):
 
 def connect_with_server():
     shared.client_socket.bind(('0.0.0.0', 0))
-    server_polling_thread = threading.Thread(target=server_connection)
-    server_responding_thread = threading.Thread(target=recieve_messages)
-    server_polling_thread.setDaemon(True)
+    server_polling_thread = threading.Thread(target=server_connection,daemon=True)
+    server_responding_thread = threading.Thread(target=recieve_messages,daemon=True)
     server_polling_thread.start()
-    server_responding_thread.setDaemon(True)
     server_responding_thread.start()
 
-
-
-
-
-
-
-
-global input_device_name_to_info_mapping
-input_device_name_to_info_mapping = {}
-
-global output_device_name_to_info_mapping
-output_device_name_to_info_mapping = {}
 
 # Initialize the main application window
 app = ctk.CTk()
@@ -553,7 +546,7 @@ def update_transcribe_textbox(text):
 
 def start_transcription_thread():
     # Start the speech-to-text process in a separate thread to keep UI responsive
-    transcription_thread = Thread(target=start_speech_to_text_transcription, args=(update_transcribe_textbox, stop_transcription_event))
+    transcription_thread = Thread(target=start_speech_to_text_transcription, args=(update_transcribe_textbox, stop_transcription_event),daemon=True)
     transcription_thread.start()
 
 def start_transcription():
