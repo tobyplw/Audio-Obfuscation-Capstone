@@ -95,6 +95,7 @@ def incoming_call_request(callee_username):
         # Here goes accepting call logic
         message = {"Action" : "Accept", "From_Username" : shared.current_user, "To_Username" : callee_username,  "Time" : time.time()}
         shared.client_socket.sendto(json.dumps(message).encode(), (shared.SERVER_HOST, shared.SERVER_PORT))
+        
     else:
         # User denied the call
         print("Call denied.")

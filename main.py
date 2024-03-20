@@ -2,8 +2,8 @@
 
 import customtkinter as ctk
 import tkinter as tk
-from tkinter import messagebox  # Import messagebox for showing dialog messages
-from tkinter import ttk  # Import ttk module for Treeview
+from tkinter import messagebox, ttk, Toplevel  # Import messagebox for showing dialog messages
+# from tkinter import ttk  # Import ttk module for Treeview
 from datetime import datetime  # Import datetime to fetch the current time
 from PIL import Image # from tkinter import PhotoImage
 import threading
@@ -12,7 +12,7 @@ import database
 import shared
 from shared import stop_transcription_event
 from stt import start_speech_to_text_transcription
-from call import get_user_input,get_user_output,call,listen_for_conn
+from call import get_user_input,get_user_output
 
 
 global device_name_to_info_mapping
@@ -126,11 +126,127 @@ sign_out_button.pack(pady=(10, 20), padx=20, anchor='e')
 
 
 # Call Frame Content
+
+
+
 call_label = ctk.CTkLabel(call_frame, text="Enter Callee's Username:")
 call_label.pack(pady=(30,20) , padx=20)
 
 callee_id_entry = ctk.CTkEntry(call_frame)
 callee_id_entry.pack(pady=10, padx=20)
+
+def open_call_window(username):
+
+    def mute_off():
+        mute_button.configure(fg_color='red')
+        mute_button.configure(hover_color='red')
+        mute_button.configure(image=mute_photo)
+        mute_button.configure(command=mute_on)
+    def mute_on():
+        mute_button.configure(fg_color='white')
+        mute_button.configure(hover_color='white')
+        mute_button.configure(image=unmute_photo)
+        mute_button.configure(command=mute_off)
+
+    call_window = Toplevel(app)
+    call_window.title("Call")
+    call_window.geometry("1400x700")
+    call_window.configure(bg="#333333")  # Light gray background
+
+    pfp_image = Image.open("assets/pfp.png")
+    pfp_photo = ctk.CTkImage(pfp_image, size=(200,200))
+    pfp_label = ctk.CTkLabel(call_window, image = pfp_photo, text="")
+    pfp_label.pack(pady=(100,20))
+
+    user_label = ctk.CTkLabel(call_window, text=username, font=("Roboto", 30))
+    user_label.pack()
+
+    buttons_frame = ctk.CTkFrame(call_window, fg_color="transparent")
+    buttons_frame.pack(side='bottom', pady=40)
+
+    hang_up_image = Image.open("assets/hangup.png")
+    # resized_image = hang_up_image.resize((40, 40), Image.ANTIALIAS)
+
+    # Convert to PhotoImage
+    hang_up_photo = ctk.CTkImage(hang_up_image, size=(40,40))
+
+    # Now create the button with the image
+    hang_up_button = ctk.CTkButton(buttons_frame, 
+                                   image=hang_up_photo, 
+                                   text="", 
+                                   height=40, 
+                                   width=40, 
+                                   corner_radius=40, 
+                                   fg_color="red", 
+                                   hover_color="#d3d3d3",
+                                   command=lambda: hang_up_call(call_window))
+    # hang_up_button.image = hang_up_photo  # Keep a reference to avoid garbage collection
+    # hang_up_button.pack(side="left", padx=10)
+
+    mute_image = Image.open("assets/muteicon.png")
+
+    mute_photo = ctk.CTkImage(mute_image, size=(40,40))
+
+    unmute_image = Image.open("assets/unmuteicon.png")
+
+    unmute_photo = ctk.CTkImage(unmute_image, size=(40,40))
+
+    mute_button = ctk.CTkButton(buttons_frame, 
+                                image=unmute_photo, 
+                                text="", 
+                                height=40, 
+                                width=40, 
+                                corner_radius=40, 
+                                fg_color="white",
+                                hover_color='white', 
+                                command=mute_off)
+    # mute_button.pack(side="right", padx=10)
+    
+    obfuscate_image = Image.open("assets/obfuscate.png")
+
+    obfuscate_photo = ctk.CTkImage(obfuscate_image, size=(40,40))
+
+    obfuscate_button = ctk.CTkButton(buttons_frame, 
+                                image=obfuscate_photo, 
+                                text="", 
+                                height=40, 
+                                width=40, 
+                                corner_radius=40, 
+                                fg_color="white", 
+                                command=mute_call)
+    # obfuscate_button.pack(side="left", padx=10)
+    
+    transcribe_image = Image.open("assets/transcribe.png")
+
+    transcribe_photo = ctk.CTkImage(transcribe_image, size=(40,40))
+
+    transcribe_button = ctk.CTkButton(buttons_frame, 
+                                image=transcribe_photo, 
+                                text="", 
+                                height=40, 
+                                width=40, 
+                                corner_radius=40, 
+                                fg_color="white", 
+                                command=mute_call)
+    transcribe_button.pack(side="right", padx=25)
+    obfuscate_button.pack(side="right", padx=25)
+    mute_button.pack(side="left", padx=25)
+    hang_up_button.pack(side="left", padx=25)
+
+    # test_button = ctk.CTkButton(call_window, text="")
+    # test_button.pack(side='bottom')
+
+    # You will need to define mute_call() and hang_up_call(window) functions to handle the logic
+    # for muting/unmuting the call and hanging up respectively.
+
+def mute_call():
+    # Logic to mute the call
+    print('Mic has been muted.')
+    pass
+
+def hang_up_call(window):
+    # Logic to hang up the call
+    window.destroy()
 
 # Modified call_user function to include hiding and showing the Start Recording button
 def call_user():
@@ -139,22 +255,30 @@ def call_user():
     messagebox.showinfo("Call Authenticated", f"Calling User with ID: {callee_id}")  # Show a dialog box as feedback
     start_recording_button.pack(before=back_button_call, pady=10, padx=20)  # Adjusted to pack before the Back button
 
-# def receive_call():
-#     call_from = "Caller"
-#     # Display a messagebox asking if the user wants to accept the call
-#     accept_call = messagebox.askyesno("Incoming Call", f"You have an incoming call from {call_from}.\nAnswer it?")
+def receive_call():
+    # Simulate receiving a call
+    call_from = "User Name"  # Example caller ID
+    # Display a messagebox asking if the user wants to accept the call
+    accept_call = messagebox.askyesno("Incoming Call", f"Incoming call from {call_from}. \nAnswer it?")
     
-#     if accept_call:
-#         # User accepted the call
-#         print("Call accepted.")
-#         # Here goes accepting call logic
-#     else:
-#         # User denied the call
-#         print("Call denied.")
-#         # Add logic for what happens when a call is denied
+    if accept_call:
+        # User accepted the call
+        print("Call accepted.")
+        # Here you would add your logic to handle accepting the call
+        open_call_window(call_from)
+
+    else:
+        # User denied the call
+        print("Call denied.")
+        # Add logic for what happens when a call is denied
+
+
 
 call_button = ctk.CTkButton(call_frame, text="Call", command=call_user)
 call_button.pack(pady=10, padx=20)
+
+test_button2 = ctk.CTkButton(call_frame, text="Receive Call", command=receive_call)
+test_button2.pack(pady=20)
 
 def combobox_callback(choice):
     # Assuming `shared.py` has been imported as `shared`
@@ -276,9 +400,9 @@ def sign_in():
         receiving_port = 9999  # This should be your actual receiving port
 
         # Start listening in a separate thread
-        listen_thread = threading.Thread(target=listen_for_conn, args=(receiving_ip, receiving_port))
-        listen_thread.daemon = True
-        listen_thread.start()
+        # listen_thread = threading.Thread(target=listen_for_conn, args=(receiving_ip, receiving_port))
+        # listen_thread.daemon = True
+        # listen_thread.start()
 
         raise_frame(main_frame)
         setup_logs_frame(username)
