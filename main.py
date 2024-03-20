@@ -625,6 +625,8 @@ password_label = ctk.CTkLabel(log_in_frame_content, text="Password:")
 password_entry = ctk.CTkEntry(log_in_frame_content, placeholder_text="Password", show="*")
 # password_entry.pack(pady=(0,20))
 
+password_entry.bind("<Return>", lambda event=None: sign_in())
+
 # Sign In Button
 sign_in_button = ctk.CTkButton(log_in_frame_content, text="Sign In", command=sign_in)
 # sign_in_button.pack(pady=20)
