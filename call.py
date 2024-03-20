@@ -13,6 +13,8 @@ import numpy as np
 import database as db
 import utilities
 import shared
+from shared import is_muted
+
 
 
 DEBUG = 0
@@ -142,11 +144,11 @@ def incoming_buffer(buffer, rtp, seq_number, time_delta = 0):
         return None
 
 def talk(udp_socket, record_stream, callee_username, destination_ip, destination_port):
-    ssrc = 5678 
-    payload_type = 0  
-    voc = Vocoder(create_random_seed = False, rate = RATE, chunk = CHUNK_SIZE_TALK, distortion=0.10)
+    ssrc = 5678
+    payload_type = 0
+    voc = Vocoder(create_random_seed=False, rate=RATE, chunk=CHUNK_SIZE_TALK, distortion=0.10)
 
-    # protect RTP
+    # Protect RTP
     tx_policy = Policy(key=shared.key, ssrc_type=Policy.SSRC_ANY_OUTBOUND)
     tx_session = Session(policy=tx_policy)
     sequence_number = 0
@@ -155,21 +157,29 @@ def talk(udp_socket, record_stream, callee_username, destination_ip, destination
         while True:
             current_time_ms = int(time.time() * 1000) % (1 << 32)
             rtp_header = utilities.create_rtp_header(sequence_number, current_time_ms, ssrc, payload_type)
-            raw_data = record_stream.read(CHUNK_SIZE_TALK, exception_on_overflow = False)
+            raw_data = record_stream.read(CHUNK_SIZE_TALK, exception_on_overflow=False)
             in_data = np.frombuffer(raw_data, dtype=np.float32)
 
             if shared.obfuscation_on:
                 in_data = voc.transform(in_data)
             pcm_data = voc.float2pcm(in_data)
             data = pcm_data.tobytes('C')
-    
+
             packet = rtp_header + data
-            srtp = tx_session.protect(packet)
-            udp_socket.sendto(srtp, (destination_ip, destination_port))
-            sequence_number+=1
+
+            # Check if microphone is muted
+            if not shared.is_muted:
+                srtp = tx_session.protect(packet)
+                udp_socket.sendto(srtp, (destination_ip, destination_port))
+            else:
+                # If muted, you might want to do something (like sending silence or just skipping)
+                pass
+
+            sequence_number += 1
     except KeyboardInterrupt:
         udp_socket.close()
         record_stream.close()
+
 
 def listen(udp_socket, listen_stream):
     packet_buffer = {}

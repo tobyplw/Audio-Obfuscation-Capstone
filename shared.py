@@ -4,6 +4,7 @@ import socket
 current_user = ""
 input_device = None
 output_device = None
+is_muted = False
 
 stop_transcription_event = Event()
 stop_thread_event = Event()
