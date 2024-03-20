@@ -8,6 +8,8 @@ from datetime import datetime  # Import datetime to fetch the current time
 from PIL import Image # from tkinter import PhotoImage
 import threading
 from threading import Thread
+
+import pyaudio
 import database
 import shared
 from shared import stop_transcription_event
@@ -28,7 +30,10 @@ input_device_name_to_info_mapping = {}
 global output_device_name_to_info_mapping
 output_device_name_to_info_mapping = {}
 
-
+global input_stream, output_stream, audio
+input_stream = None
+output_stream = None
+audio = pyaudio.PyAudio()
 
 
 def check_NAT():
@@ -97,10 +102,11 @@ def handle_error_message(callee_username):
     pass
 
 def handle_call(destination_ip,destination_port, callee_username):
+    global input_stream, output_stream
     open_call_window(shared.current_user)
-    record_stream, listen_stream = call.start_audio_stream(shared.input_device, shared.output_device)
-    start_call_thread = threading.Thread(target=call.talk, args=(shared.client_socket, record_stream,callee_username, destination_ip, destination_port),daemon=True)
-    listen_call_thread = threading.Thread(target=call.listen, args=(shared.client_socket, listen_stream),daemon=True)
+    input_stream, output_stream = call.start_audio_stream(shared.input_device, shared.output_device,audio)
+    start_call_thread = threading.Thread(target=call.talk, args=(shared.client_socket, input_stream,callee_username, destination_ip, destination_port),daemon=True)
+    listen_call_thread = threading.Thread(target=call.listen, args=(shared.client_socket, output_stream),daemon=True)
     start_call_thread.start()
     listen_call_thread.start()
 
@@ -661,6 +667,19 @@ sign_up_confirm_button.pack(pady=10)
 back_to_login_button = ctk.CTkButton(sign_up_frame_content, text="Back to Login", command=lambda: raise_frame(log_in_frame))
 back_to_login_button.pack(pady=10)
 
+def on_close():
+    global input_stream, output_stream, audio
+    if input_stream is not None:
+        input_stream.stop_stream()
+        input_stream.close()
+    if output_stream is not None:
+        output_stream.stop_stream()
+        output_stream.close()
+    if audio is not None:
+        audio.terminate()
+    app.destroy()
+
+app.protocol("WM_DELETE_WINDOW", on_close)
 
 # raise_frame(main_frame)
 # Initially, show the main frame
