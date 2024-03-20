@@ -15,6 +15,7 @@ import shared
 from shared import stop_transcription_event
 from stt import start_speech_to_text_transcription
 from call import get_user_input,get_user_output
+from shared import is_muted
 
 import socket
 import time
@@ -241,6 +242,7 @@ button.pack(side='left', padx=10, pady=10, anchor='center')
 def sign_out():
     username_entry.delete(0, tk.END)
     password_entry.delete(0, tk.END)
+
     raise_frame(log_in_frame)
 
 # Update the command for the sign_out_button to use the sign_out function
@@ -260,16 +262,18 @@ callee_id_entry.pack(pady=10, padx=20)
 
 def open_call_window(username):
 
-    def mute_off():
+    def mute_on():
+        shared.is_muted = True
         mute_button.configure(fg_color='red')
         mute_button.configure(hover_color='red')
         mute_button.configure(image=mute_photo)
-        mute_button.configure(command=mute_on)
-    def mute_on():
+        mute_button.configure(command=mute_off)
+    def mute_off():
+        shared.is_muted = False
         mute_button.configure(fg_color='white')
         mute_button.configure(hover_color='white')
         mute_button.configure(image=unmute_photo)
-        mute_button.configure(command=mute_off)
+        mute_button.configure(command=mute_on)
 
     call_window = Toplevel(app)
     call_window.title("Call")
@@ -322,7 +326,7 @@ def open_call_window(username):
                                 corner_radius=40, 
                                 fg_color="white",
                                 hover_color='white', 
-                                command=mute_off)
+                                command=mute_on)
     # mute_button.pack(side="right", padx=10)
     
     obfuscate_image = Image.open("assets/obfuscate.png")
@@ -633,6 +637,8 @@ password_label = ctk.CTkLabel(log_in_frame_content, text="Password:")
 # password_label.pack(pady=(10,0))
 password_entry = ctk.CTkEntry(log_in_frame_content, placeholder_text="Password", show="*")
 # password_entry.pack(pady=(0,20))
+
+password_entry.bind("<Return>", lambda event=None: sign_in())
 
 # Sign In Button
 sign_in_button = ctk.CTkButton(log_in_frame_content, text="Sign In", command=sign_in)
