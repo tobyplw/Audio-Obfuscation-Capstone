@@ -386,6 +386,8 @@ def hang_up_call(window):
         output_stream.stop_stream()
         output_stream.close()
         print("output stream closed")
+
+    shared.call_end.clear()
     window.destroy()
 
 # Modified call_user function to include hiding and showing the Start Recording button

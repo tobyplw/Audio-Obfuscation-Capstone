@@ -179,6 +179,8 @@ def talk(udp_socket, record_stream, callee_username, destination_ip, destination
     except KeyboardInterrupt:
         udp_socket.close()
         record_stream.close()
+    
+    print("talk ending")
 
 
 def listen(udp_socket, listen_stream):
