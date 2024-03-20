@@ -57,9 +57,9 @@ class User:
         self.is_in_call = False
         self.current_call = None
 
-    def mute(self):
-        self.is_muted = not self.is_muted
-        return self.is_muted
+    # def mute(self):
+    #     self.is_muted = not self.is_muted
+    #     return self.is_muted
 
     def start_call(self, call_session):
         self.is_in_call = True
