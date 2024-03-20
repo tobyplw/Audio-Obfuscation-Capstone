@@ -75,7 +75,6 @@ def get_user_devices(audio):
 
 def get_user_input():
     audio  = pyaudio.PyAudio()
-    CHANNELS = 1 
 
     input_devices = []
 
@@ -97,7 +96,6 @@ def get_user_input():
             seen_input_devices.add(device_name)  # Mark this device name as seen
     
     audio.terminate()
-    
     return input_devices
 
 def get_user_output():
@@ -157,7 +155,7 @@ def talk(udp_socket, record_stream, callee_username, destination_ip, destination
         while True:
             current_time_ms = int(time.time() * 1000) % (1 << 32)
             rtp_header = utilities.create_rtp_header(sequence_number, current_time_ms, ssrc, payload_type)
-            raw_data = record_stream.read(CHUNK_SIZE_TALK)
+            raw_data = record_stream.read(CHUNK_SIZE_TALK, exception_on_overflow = False)
             in_data = np.frombuffer(raw_data, dtype=np.float32)
 
             if shared.obfuscation_on:
@@ -223,15 +221,6 @@ def listen(udp_socket, listen_stream):
         udp_socket.close()
         listen_stream.close()
 
-
-def call (user_input_device, user_output_device,destination_ip):
-    hostname = socket.gethostname()
-    receiving_ip = socket.gethostbyname(hostname)
-
-    # Create a UDP socket
-    udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    #user_input_device, user_output_device = get_user_devices(audio)
-
     
 
 def start_audio_stream(user_input_device, user_output_device):
@@ -242,15 +231,14 @@ def start_audio_stream(user_input_device, user_output_device):
                         frames_per_buffer=CHUNK_SIZE_TALK,
                         input=True,
                         output=False,
-                        input_device_index=user_input_device)
-    
+                        input_device_index=user_input_device["index"])
     listen_stream = audio.open(format=FORMAT_LISTEN, 
                 channels=CHANNELS, 
                 rate=RATE, 
                 output=True, 
                 input=False,
                 frames_per_buffer=CHUNK_SIZE_SEND,
-                output_device_index=user_output_device)
+                output_device_index=user_output_device["index"])
     
     return record_stream, listen_stream
 

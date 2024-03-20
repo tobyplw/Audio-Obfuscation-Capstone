@@ -14,9 +14,129 @@ from shared import stop_transcription_event
 from stt import start_speech_to_text_transcription
 from call import get_user_input,get_user_output
 
+import socket
+import time
+import stun
+import json
+import shared
+import call
 
-global device_name_to_info_mapping
-device_name_to_info_mapping = {}
+
+def check_NAT():
+    try:
+        nat_type, external_ip, external_port = stun.get_ip_info()
+        print("Nat Type: " + str(nat_type))
+        if nat_type == "Symmetric NAT":
+            print("NAT is Symmetric. This service may not work")
+    except:
+        pass
+
+def get_internal_address():
+    internal_ip, internal_port = shared.client_socket.getsockname()
+    internal_ip = socket.gethostbyname(socket.gethostname()) #sometimes the first one gets the wrong internal ip or something
+    return internal_ip, internal_port
+
+def server_connection():
+    print("Connecting to external server...")
+    check_NAT()
+    poll_time = 0
+    internal_ip, internal_port = get_internal_address()
+    while True:
+        curr_time = time.time()
+        if curr_time > poll_time + shared.Poll_Time:
+            poll_time = curr_time
+            message = {"Action" : "Poll", "From_Username" : shared.current_user, "Internal_IP" : internal_ip, "Internal_Port" : internal_port, "Time" : time.time()}
+            shared.client_socket.sendto(json.dumps(message).encode(), (shared.SERVER_HOST, shared.SERVER_PORT))
+
+
+def send_call_message(user_input):
+    print("Calling ", user_input)
+    message = {"Action" : "Calling","From_Username" : shared.current_user, "To_Username" : user_input, "Time" : time.time()}
+    shared.client_socket.sendto(json.dumps(message).encode(), (shared.SERVER_HOST, shared.SERVER_PORT))
+
+
+def recieve_messages():
+    IN_CALL = False
+    while not IN_CALL:
+        data, server_address = shared.client_socket.recvfrom(1024)
+        inc_message = json.loads(data.decode())
+        print("Recieved message: " + str(inc_message))
+        action = inc_message["Action"]
+
+        if action == "POKE":
+            callee_username = inc_message["From_Username"]
+            incoming_call_request(callee_username)
+        elif action == "ERROR":
+            callee_username = inc_message["To_Username"]
+            handle_error_message(callee_username)
+        elif action == "CALL": 
+            destination_ip = inc_message["Destination_IP"]
+            destination_port = inc_message["Destination_Port"]
+            callee_username = inc_message["From_Username"]
+            handle_call(destination_ip,destination_port, callee_username)
+            IN_CALL = True
+        elif action == "DECLINED":
+            callee_username = inc_message["To_Username"]
+            print(f"{callee_username} Declined Your Call")
+
+
+def handle_error_message(callee_username):
+    # add these messages to gui interface
+    # print(f"There was an error contacting {callee_username}. Either does not exist or is not logged in.")
+    # print("Try Again: Enter username you are trying to reach: ")
+    pass
+
+def handle_call(destination_ip,destination_port, callee_username):
+    open_call_window(shared.current_user)
+    record_stream, listen_stream = call.start_audio_stream(shared.input_device, shared.output_device)
+    start_call_thread = threading.Thread(target=call.talk, args=(shared.client_socket, record_stream,callee_username, destination_ip, destination_port))
+    listen_call_thread = threading.Thread(target=call.listen, args=(shared.client_socket, listen_stream))
+    start_call_thread.start()
+    listen_call_thread.start()
+
+
+
+def incoming_call_request(callee_username):
+    #create box and wait for input
+    call_from = callee_username
+    # Display messagebox asking if user wants to accept the call
+    accept_call = messagebox.askyesno("Incoming Call", f"Incoming call from {call_from}. \nAnswer it?")
+    
+    if accept_call:
+        # User accepted the call
+        print("Call accepted.")
+        # Here goes accepting call logic
+        message = {"Action" : "Accept", "From_Username" : shared.current_user, "To_Username" : callee_username,  "Time" : time.time()}
+        shared.client_socket.sendto(json.dumps(message).encode(), (shared.SERVER_HOST, shared.SERVER_PORT))
+        
+    else:
+        # User denied the call
+        print("Call denied.")
+        # Add logic for what happens when a call is denied
+        message = {"Action" : "Decline", "From_Username" : shared.current_user, "To_Username" : callee_username,  "Time" : time.time()}
+        shared.client_socket.sendto(json.dumps(message).encode(), (shared.SERVER_HOST, shared.SERVER_PORT))
+
+
+def connect_with_server():
+    shared.client_socket.bind(('0.0.0.0', 0))
+    server_polling_thread = threading.Thread(target=server_connection)
+    server_responding_thread = threading.Thread(target=recieve_messages)
+
+    server_polling_thread.start()
+    server_responding_thread.start()
+
+
+
+
+
+
+
+
+global input_device_name_to_info_mapping
+input_device_name_to_info_mapping = {}
+
+global output_device_name_to_info_mapping
+output_device_name_to_info_mapping = {}
 
 # Initialize the main application window
 app = ctk.CTk()
@@ -253,48 +373,39 @@ def call_user():
     callee_id = callee_id_entry.get()  # Get the value from the entry field
     # print(f"Calling User with ID: {callee_id}")  # Placeholder for actual call functionality
     messagebox.showinfo("Call Authenticated", f"Calling User with ID: {callee_id}")  # Show a dialog box as feedback
+    send_call_message(callee_id)
     start_recording_button.pack(before=back_button_call, pady=10, padx=20)  # Adjusted to pack before the Back button
-
-def receive_call():
-    # Simulate receiving a call
-    call_from = "User Name"  # Example caller ID
-    # Display a messagebox asking if the user wants to accept the call
-    accept_call = messagebox.askyesno("Incoming Call", f"Incoming call from {call_from}. \nAnswer it?")
-    
-    if accept_call:
-        # User accepted the call
-        print("Call accepted.")
-        # Here you would add your logic to handle accepting the call
-        open_call_window(call_from)
-
-    else:
-        # User denied the call
-        print("Call denied.")
-        # Add logic for what happens when a call is denied
-
 
 
 call_button = ctk.CTkButton(call_frame, text="Call", command=call_user)
 call_button.pack(pady=10, padx=20)
 
-test_button2 = ctk.CTkButton(call_frame, text="Receive Call", command=receive_call)
-test_button2.pack(pady=20)
+# test_button2 = ctk.CTkButton(call_frame, text="Receive Call", command=receive_call)
+# test_button2.pack(pady=20)
 
-def combobox_callback(choice):
+def comboboxin_callback(choice):
     # Assuming `shared.py` has been imported as `shared`
-    if choice in device_name_to_info_mapping:
-        shared.input_device = device_name_to_info_mapping[choice]
+    if choice in input_device_name_to_info_mapping:
+        shared.input_device = input_device_name_to_info_mapping[choice]
         print(f"Device selected: {shared.input_device}")
     else:
         print("Selected device not found in mapping.")
 
-comboboxin = ctk.CTkOptionMenu(call_frame, values=[], command=combobox_callback, width=200)
+def comboboxout_callback(choice):
+    # Assuming `shared.py` has been imported as `shared`
+    if choice in output_device_name_to_info_mapping:
+        shared.output_device = output_device_name_to_info_mapping[choice]
+        print(f"Device selected: {shared.output_device}")
+    else:
+        print("Selected device not found in mapping.")
+
+comboboxin = ctk.CTkOptionMenu(call_frame, values=[], command=comboboxin_callback, width=200)
 # combobox.grid(row=0, column=0, padx=20, pady=10)
 
 comboboxin.set("Select Input")  # set initial value
 comboboxin.pack(pady=10)
 
-comboboxout = ctk.CTkOptionMenu(call_frame, values=[], command=combobox_callback, width=200)
+comboboxout = ctk.CTkOptionMenu(call_frame, values=[], command=comboboxout_callback, width=200)
 # combobox.grid(row=0, column=0, padx=20, pady=10)
 
 comboboxout.set("Select Output")  # set initial value
@@ -307,39 +418,44 @@ def update_input_devices_combobox():
     global comboboxin, device_name_to_info_mapping
     input_devices = get_user_input()
     device_names = [device['name'] for device in input_devices]  # Extract device names
-    update_device_name_to_info_mapping(input_devices)  # Update the mapping
+    update_input_device_name_to_info_mapping(input_devices)  # Update the mapping
 
     # Destroy the existing combobox (if it exists)
     if 'comboboxin' in globals():
         comboboxin.destroy()
 
     # Recreate the combobox with the new values
-    comboboxin = ctk.CTkOptionMenu(call_frame, values=device_names, height=40, width=200, command=combobox_callback)
+    comboboxin = ctk.CTkOptionMenu(call_frame, values=device_names, height=40, width=200, command=comboboxin_callback)
     comboboxin.pack(pady=10)
     comboboxin.set("Select Input")  # Optionally set a default value
 
 
 
 def update_output_devices_combobox():
-    global comboboxout, device_name_to_info_mapping
+    global comboboxout, output_device_name_to_info_mapping
     output_devices = get_user_output()
     device_names = [device['name'] for device in output_devices]  # Extract device names
-    update_device_name_to_info_mapping(output_devices)  # Update the mapping
+    update_output_device_name_to_info_mapping(output_devices)  # Update the mapping
 
     # Destroy the existing combobox (if it exists)
     if 'comboboxout' in globals():
         comboboxout.destroy()
 
     # Recreate the combobox with the new values
-    comboboxout = ctk.CTkOptionMenu(call_frame, values=device_names, height=40, width=200, command=combobox_callback)
+    comboboxout = ctk.CTkOptionMenu(call_frame, values=device_names, height=40, width=200, command=comboboxout_callback)
     comboboxout.pack(pady=10)
     comboboxout.set("Select Output")  # Optionally set a default value
 
 
-def update_device_name_to_info_mapping(devices):
-    global device_name_to_info_mapping
+def update_input_device_name_to_info_mapping(devices):
+    global input_device_name_to_info_mapping
     for device in devices:
-        device_name_to_info_mapping[device['name']] = device
+        input_device_name_to_info_mapping[device['name']] = device
+
+def update_output_device_name_to_info_mapping(devices):
+    global output_device_name_to_info_mapping
+    for device in devices:
+        output_device_name_to_info_mapping[device['name']] = device
 
 back_button_call = ctk.CTkButton(call_frame, text="Back to Main", command=lambda: raise_frame(main_frame))
 back_button_call.pack(pady=20, padx=20)
@@ -403,6 +519,8 @@ def sign_in():
         # listen_thread = threading.Thread(target=listen_for_conn, args=(receiving_ip, receiving_port))
         # listen_thread.daemon = True
         # listen_thread.start()
+        
+        connect_with_server()
 
         raise_frame(main_frame)
         setup_logs_frame(username)
@@ -561,3 +679,4 @@ back_to_login_button.pack(pady=10)
 raise_frame(log_in_frame)
 
 app.mainloop()
+
