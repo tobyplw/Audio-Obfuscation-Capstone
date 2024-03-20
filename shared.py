@@ -7,6 +7,7 @@ output_device = None
 
 stop_transcription_event = Event()
 stop_thread_event = Event()
+call_end = Event()
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 

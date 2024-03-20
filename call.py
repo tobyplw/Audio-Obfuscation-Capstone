@@ -152,7 +152,7 @@ def talk(udp_socket, record_stream, callee_username, destination_ip, destination
     sequence_number = 0
     print("Sending audio to " + destination_ip)
     try:
-        while True:
+        while not shared.call_end.isSet():
             current_time_ms = int(time.time() * 1000) % (1 << 32)
             rtp_header = utilities.create_rtp_header(sequence_number, current_time_ms, ssrc, payload_type)
             raw_data = record_stream.read(CHUNK_SIZE_TALK, exception_on_overflow = False)
@@ -165,11 +165,20 @@ def talk(udp_socket, record_stream, callee_username, destination_ip, destination
     
             packet = rtp_header + data
             srtp = tx_session.protect(packet)
-            udp_socket.sendto(srtp, (destination_ip, destination_port))
+            try:
+                udp_socket.sendto(srtp, (destination_ip, destination_port))
+            except OSError as e:
+                print(f"Connection broken")
+                break  # Break out of the loop if the socket is in a bad state
             sequence_number+=1
+
+            if shared.call_end.isSet():
+                print("talk ending")
+
     except KeyboardInterrupt:
         udp_socket.close()
         record_stream.close()
+
 
 def listen(udp_socket, listen_stream):
     packet_buffer = {}
@@ -177,8 +186,11 @@ def listen(udp_socket, listen_stream):
     rx_session = Session(policy=rx_policy)
     previous_time = 0
     prev_play_time = 0
+
+    udp_socket.setblocking(0)
+
     try: 
-        while True:
+        while not shared.call_end.isSet():
             try:
                 data, sender_address = udp_socket.recvfrom(1046)
 
@@ -205,6 +217,9 @@ def listen(udp_socket, listen_stream):
 
                 previous_time = to_play_header["timestamp"]
 
+                if shared.call_end.isSet():
+                    print("listen ending")
+
 
             except socket.error as e:
                 err = e.args[0]
@@ -213,14 +228,15 @@ def listen(udp_socket, listen_stream):
                     continue
                 else:
                     # an actual error occurred
-                    print(e)
-                    sys.exit(1)
+                    print(f"Socket error occurred: {e}")
+                    break  # Break the loop for other errors
         
     except KeyboardInterrupt:
         # Close the socket and stream
         udp_socket.close()
         listen_stream.close()
 
+    print("listen ending")
     
 
 def start_audio_stream(user_input_device, user_output_device, audio):
@@ -231,6 +247,7 @@ def start_audio_stream(user_input_device, user_output_device, audio):
                         input=True,
                         output=False,
                         input_device_index=user_input_device["index"])
+    
     listen_stream = audio.open(format=FORMAT_LISTEN, 
                 channels=CHANNELS, 
                 rate=RATE, 

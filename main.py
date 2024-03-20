@@ -30,7 +30,7 @@ input_device_name_to_info_mapping = {}
 global output_device_name_to_info_mapping
 output_device_name_to_info_mapping = {}
 
-global input_stream, output_stream, audio
+global input_stream, output_stream, audio, start_call_thread, listen_call_thread
 input_stream = None
 output_stream = None
 audio = pyaudio.PyAudio()
@@ -102,7 +102,7 @@ def handle_error_message(callee_username):
     pass
 
 def handle_call(destination_ip,destination_port, callee_username):
-    global input_stream, output_stream
+    global input_stream, output_stream, start_call_thread, listen_call_thread
     open_call_window(shared.current_user)
     input_stream, output_stream = call.start_audio_stream(shared.input_device, shared.output_device,audio)
     start_call_thread = threading.Thread(target=call.talk, args=(shared.client_socket, input_stream,callee_username, destination_ip, destination_port),daemon=True)
@@ -368,7 +368,20 @@ def mute_call():
     pass
 
 def hang_up_call(window):
-    # Logic to hang up the call
+    global input_stream, output_stream, audio, start_call_thread, listen_call_thread
+    shared.call_end.set()
+
+    listen_call_thread.join()
+    start_call_thread.join()
+
+    if input_stream is not None:
+        input_stream.stop_stream()
+        input_stream.close()
+        print("input stream closed")
+    if output_stream is not None:
+        output_stream.stop_stream()
+        output_stream.close()
+        print("output stream closed")
     window.destroy()
 
 # Modified call_user function to include hiding and showing the Start Recording button

@@ -1,7 +1,6 @@
 from dotenv import load_dotenv
 import logging, verboselogs
 from time import sleep
-from shared import stop_transcription_event
 
 from deepgram import (
     DeepgramClient,
