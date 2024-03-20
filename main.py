@@ -42,6 +42,7 @@ def server_connection():
     poll_time = 0
     internal_ip, internal_port = get_internal_address()
     while True:
+        time.sleep(.5)
         curr_time = time.time()
         if curr_time > poll_time + shared.Poll_Time:
             poll_time = curr_time
@@ -91,7 +92,9 @@ def handle_call(destination_ip,destination_port, callee_username):
     record_stream, listen_stream = call.start_audio_stream(shared.input_device, shared.output_device)
     start_call_thread = threading.Thread(target=call.talk, args=(shared.client_socket, record_stream,callee_username, destination_ip, destination_port))
     listen_call_thread = threading.Thread(target=call.listen, args=(shared.client_socket, listen_stream))
+    start_call_thread.setDaemon(True)
     start_call_thread.start()
+    listen_call_thread.setDaemon(True)
     listen_call_thread.start()
 
 
@@ -121,8 +124,9 @@ def connect_with_server():
     shared.client_socket.bind(('0.0.0.0', 0))
     server_polling_thread = threading.Thread(target=server_connection)
     server_responding_thread = threading.Thread(target=recieve_messages)
-
+    server_polling_thread.setDaemon(True)
     server_polling_thread.start()
+    server_responding_thread.setDaemon(True)
     server_responding_thread.start()
 
 
@@ -510,15 +514,6 @@ def sign_in():
     if(database.login(username, password)):
         # Set current user
         shared.current_user = username
-
-        # Assuming you have set your receiving IP and port somewhere
-        receiving_ip = "127.0.0.1"  # This should be your actual receiving IP
-        receiving_port = 9999  # This should be your actual receiving port
-
-        # Start listening in a separate thread
-        # listen_thread = threading.Thread(target=listen_for_conn, args=(receiving_ip, receiving_port))
-        # listen_thread.daemon = True
-        # listen_thread.start()
         
         connect_with_server()
 
