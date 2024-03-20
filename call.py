@@ -233,8 +233,7 @@ def listen(udp_socket, listen_stream):
 
     
 
-def start_audio_stream(user_input_device, user_output_device):
-    audio = pyaudio.PyAudio()
+def start_audio_stream(user_input_device, user_output_device, audio):
     record_stream = audio.open(format=FORMAT_TALK, 
                         rate=RATE, 
                         channels=CHANNELS,

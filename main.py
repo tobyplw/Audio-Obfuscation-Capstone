@@ -8,6 +8,8 @@ from datetime import datetime  # Import datetime to fetch the current time
 from PIL import Image # from tkinter import PhotoImage
 import threading
 from threading import Thread
+
+import pyaudio
 import database
 import shared
 from shared import stop_transcription_event
@@ -21,6 +23,18 @@ import stun
 import json
 import shared
 import call
+
+
+global input_device_name_to_info_mapping
+input_device_name_to_info_mapping = {}
+
+global output_device_name_to_info_mapping
+output_device_name_to_info_mapping = {}
+
+global input_stream, output_stream, audio
+input_stream = None
+output_stream = None
+audio = pyaudio.PyAudio()
 
 
 def check_NAT():
@@ -89,13 +103,12 @@ def handle_error_message(callee_username):
     pass
 
 def handle_call(destination_ip,destination_port, callee_username):
+    global input_stream, output_stream
     open_call_window(shared.current_user)
-    record_stream, listen_stream = call.start_audio_stream(shared.input_device, shared.output_device)
-    start_call_thread = threading.Thread(target=call.talk, args=(shared.client_socket, record_stream,callee_username, destination_ip, destination_port))
-    listen_call_thread = threading.Thread(target=call.listen, args=(shared.client_socket, listen_stream))
-    start_call_thread.setDaemon(True)
+    input_stream, output_stream = call.start_audio_stream(shared.input_device, shared.output_device,audio)
+    start_call_thread = threading.Thread(target=call.talk, args=(shared.client_socket, input_stream,callee_username, destination_ip, destination_port),daemon=True)
+    listen_call_thread = threading.Thread(target=call.listen, args=(shared.client_socket, output_stream),daemon=True)
     start_call_thread.start()
-    listen_call_thread.setDaemon(True)
     listen_call_thread.start()
 
 
@@ -123,19 +136,11 @@ def incoming_call_request(callee_username):
 
 def connect_with_server():
     shared.client_socket.bind(('0.0.0.0', 0))
-    server_polling_thread = threading.Thread(target=server_connection)
-    server_responding_thread = threading.Thread(target=recieve_messages)
-    server_polling_thread.setDaemon(True)
+    server_polling_thread = threading.Thread(target=server_connection,daemon=True)
+    server_responding_thread = threading.Thread(target=recieve_messages,daemon=True)
     server_polling_thread.start()
-    server_responding_thread.setDaemon(True)
     server_responding_thread.start()
 
-
-global input_device_name_to_info_mapping
-input_device_name_to_info_mapping = {}
-
-global output_device_name_to_info_mapping
-output_device_name_to_info_mapping = {}
 
 # Initialize the main application window
 app = ctk.CTk()
@@ -551,7 +556,7 @@ def update_transcribe_textbox(text):
 
 def start_transcription_thread():
     # Start the speech-to-text process in a separate thread to keep UI responsive
-    transcription_thread = Thread(target=start_speech_to_text_transcription, args=(update_transcribe_textbox, stop_transcription_event))
+    transcription_thread = Thread(target=start_speech_to_text_transcription, args=(update_transcribe_textbox, stop_transcription_event),daemon=True)
     transcription_thread.start()
 
 def start_transcription():
@@ -666,6 +671,19 @@ sign_up_confirm_button.pack(pady=10)
 back_to_login_button = ctk.CTkButton(sign_up_frame_content, text="Back to Login", command=lambda: raise_frame(log_in_frame))
 back_to_login_button.pack(pady=10)
 
+def on_close():
+    global input_stream, output_stream, audio
+    if input_stream is not None:
+        input_stream.stop_stream()
+        input_stream.close()
+    if output_stream is not None:
+        output_stream.stop_stream()
+        output_stream.close()
+    if audio is not None:
+        audio.terminate()
+    app.destroy()
+
+app.protocol("WM_DELETE_WINDOW", on_close)
 
 # raise_frame(main_frame)
 # Initially, show the main frame
