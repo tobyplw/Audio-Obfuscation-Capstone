@@ -180,10 +180,19 @@ def talk(udp_socket, record_stream, callee_username, destination_ip, destination
         udp_socket.close()
         record_stream.close()
     
-    print("talk ending")
+    i = 0
+    while i < 10:
+        rtp_header = utilities.create_rtp_header(sequence_number, current_time_ms, ssrc, payload_type = 2)
+        data = bytes(1024)
+        packet = rtp_header + data
+        srtp = tx_session.protect(packet)
+        udp_socket.sendto(srtp, (destination_ip, destination_port))
+        sequence_number+=1
+        i+=1
+    print("Talk Ending")
 
 
-def listen(udp_socket, listen_stream):
+def listen(udp_socket, listen_stream, hang_up_button):
     packet_buffer = {}
     rx_policy = Policy(key=shared.key, ssrc_type=Policy.SSRC_ANY_INBOUND)
     rx_session = Session(policy=rx_policy)
@@ -200,6 +209,14 @@ def listen(udp_socket, listen_stream):
                 
                 # Parse the RTP header
                 rtp_header = utilities.parse_rtp_header(rtp)
+                if rtp_header["payload_type"] == 2:
+                    print("Callee Hung Up")
+                    shared.call_end.set()
+                    hang_up_button.invoke()
+                    return
+                if rtp_header["payload_type"] == 1:
+                    #handle Transcriptions
+                    pass
                 seq_num = rtp_header["sequence_number"]
                 to_play = incoming_buffer(packet_buffer, rtp, seq_num)
                 #to_play = rtp
@@ -209,7 +226,6 @@ def listen(udp_socket, listen_stream):
                     continue
 
                 final = to_play[12:1036]
-                print("Writing")
                 listen_stream.write(final)
 
                 current_time = to_play_header["timestamp"]

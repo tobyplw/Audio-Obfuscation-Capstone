@@ -36,7 +36,8 @@ input_stream = None
 output_stream = None
 audio = pyaudio.PyAudio()
 
-
+global hang_up_button
+hang_up_button = None
 def check_NAT():
     try:
         nat_type, external_ip, external_port = stun.get_ip_info()
@@ -73,7 +74,7 @@ def send_call_message(user_input):
 
 def recieve_messages():
     while True:
-        time.sleep(0.5)
+        time.sleep(0.1)
         if not shared.in_call.is_set():
             data = None
             try:
@@ -101,8 +102,8 @@ def recieve_messages():
                     elif action == "DECLINED":
                         callee_username = inc_message["To_Username"]
                         print(f"{callee_username} Declined Your Call")
-                except Exception as e:
-                    print("Recieved an Invalid Packet with error: " + str(e))
+                except UnicodeDecodeError as e: #this occurs for leftover packets from the audio stream
+                    pass
 
 
 def handle_error_message(callee_username):
@@ -116,7 +117,7 @@ def handle_call(destination_ip,destination_port, callee_username):
     open_call_window(shared.current_user)
     input_stream, output_stream = call.start_audio_stream(shared.input_device, shared.output_device,audio)
     start_call_thread = threading.Thread(target=call.talk, args=(shared.client_socket, input_stream,callee_username, destination_ip, destination_port),daemon=True)
-    listen_call_thread = threading.Thread(target=call.listen, args=(shared.client_socket, output_stream),daemon=True)
+    listen_call_thread = threading.Thread(target=call.listen, args=(shared.client_socket, output_stream, hang_up_button),daemon=True)
     start_call_thread.start()
     listen_call_thread.start()
 
@@ -271,7 +272,7 @@ callee_id_entry = ctk.CTkEntry(call_frame)
 callee_id_entry.pack(pady=10, padx=20)
 
 def open_call_window(username):
-
+    global hang_up_button
     def mute_on():
         shared.is_muted = True
         mute_button.configure(fg_color='red')
@@ -384,8 +385,7 @@ def mute_call():
 def hang_up_call(window):
     global input_stream, output_stream, audio, start_call_thread, listen_call_thread
     shared.call_end.set()
-
-    listen_call_thread.join()
+    #listen_call_thread.join()
     start_call_thread.join()
 
     if input_stream is not None:

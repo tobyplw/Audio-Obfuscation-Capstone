@@ -1,5 +1,8 @@
 import struct
 
+#if payload_type = 0, AUDIO DATA
+#if payload_type = 1, TRANSCRIPTIONS
+#if payload_type = 2, HANGUP
 def create_rtp_header(sequence_number, timestamp, ssrc, payload_type):
     version = 2  # RTP version
     padding = 0
