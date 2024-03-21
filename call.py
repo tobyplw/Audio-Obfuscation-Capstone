@@ -154,7 +154,7 @@ def talk(udp_socket, record_stream, callee_username, destination_ip, destination
     sequence_number = 0
     print("Sending audio to " + destination_ip)
     try:
-        while not shared.call_end.isSet():
+        while not shared.call_end.is_set():
             current_time_ms = int(time.time() * 1000) % (1 << 32)
             rtp_header = utilities.create_rtp_header(sequence_number, current_time_ms, ssrc, payload_type)
             raw_data = record_stream.read(CHUNK_SIZE_TALK, exception_on_overflow=False)
@@ -190,10 +190,8 @@ def listen(udp_socket, listen_stream):
     previous_time = 0
     prev_play_time = 0
 
-    udp_socket.setblocking(0)
-
     try: 
-        while not shared.call_end.isSet():
+        while not shared.call_end.is_set():
             try:
                 data, sender_address = udp_socket.recvfrom(1046)
 
@@ -211,6 +209,7 @@ def listen(udp_socket, listen_stream):
                     continue
 
                 final = to_play[12:1036]
+                print("Writing")
                 listen_stream.write(final)
 
                 current_time = to_play_header["timestamp"]
@@ -220,7 +219,7 @@ def listen(udp_socket, listen_stream):
 
                 previous_time = to_play_header["timestamp"]
 
-                if shared.call_end.isSet():
+                if shared.call_end.is_set():
                     print("listen ending")
 
 

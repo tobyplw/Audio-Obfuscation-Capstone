@@ -72,28 +72,37 @@ def send_call_message(user_input):
 
 
 def recieve_messages():
-    IN_CALL = False
-    while not IN_CALL:
-        data, server_address = shared.client_socket.recvfrom(1024)
-        inc_message = json.loads(data.decode())
-        print("Recieved message: " + str(inc_message))
-        action = inc_message["Action"]
+    while True:
+        time.sleep(0.5)
+        if not shared.in_call.is_set():
+            data = None
+            try:
+                data, server_address = shared.client_socket.recvfrom(1024)
+            except BlockingIOError:
+                pass
+            if data is not None:
+                try:
+                    inc_message = json.loads(data.decode())
+                    print("Recieved message: " + str(inc_message))
+                    action = inc_message["Action"]
 
-        if action == "POKE":
-            callee_username = inc_message["From_Username"]
-            incoming_call_request(callee_username)
-        elif action == "ERROR":
-            callee_username = inc_message["To_Username"]
-            handle_error_message(callee_username)
-        elif action == "CALL": 
-            destination_ip = inc_message["Destination_IP"]
-            destination_port = inc_message["Destination_Port"]
-            callee_username = inc_message["From_Username"]
-            handle_call(destination_ip,destination_port, callee_username)
-            IN_CALL = True
-        elif action == "DECLINED":
-            callee_username = inc_message["To_Username"]
-            print(f"{callee_username} Declined Your Call")
+                    if action == "POKE":
+                        callee_username = inc_message["From_Username"]
+                        incoming_call_request(callee_username)
+                    elif action == "ERROR":
+                        callee_username = inc_message["To_Username"]
+                        handle_error_message(callee_username)
+                    elif action == "CALL": 
+                        destination_ip = inc_message["Destination_IP"]
+                        destination_port = inc_message["Destination_Port"]
+                        callee_username = inc_message["From_Username"]
+                        handle_call(destination_ip,destination_port, callee_username)
+                        shared.in_call.set()
+                    elif action == "DECLINED":
+                        callee_username = inc_message["To_Username"]
+                        print(f"{callee_username} Declined Your Call")
+                except Exception as e:
+                    print("Recieved an Invalid Packet with error: " + str(e))
 
 
 def handle_error_message(callee_username):
@@ -136,6 +145,7 @@ def incoming_call_request(callee_username):
 
 def connect_with_server():
     shared.client_socket.bind(('0.0.0.0', 0))
+    shared.client_socket.setblocking(0)
     server_polling_thread = threading.Thread(target=server_connection,daemon=True)
     server_responding_thread = threading.Thread(target=recieve_messages,daemon=True)
     server_polling_thread.start()
@@ -388,6 +398,7 @@ def hang_up_call(window):
         print("output stream closed")
 
     shared.call_end.clear()
+    shared.in_call.clear()
     window.destroy()
 
 # Modified call_user function to include hiding and showing the Start Recording button
