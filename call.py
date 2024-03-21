@@ -160,8 +160,8 @@ def talk(udp_socket, record_stream, callee_username, destination_ip, destination
             raw_data = record_stream.read(CHUNK_SIZE_TALK, exception_on_overflow=False)
             in_data = np.frombuffer(raw_data, dtype=np.float32)
 
-            if shared.obfuscation_on:
-                in_data = voc.transform(in_data)
+            if not shared.obfuscation_on.is_set():
+                in_data = voc.audio_effects(in_data)
             pcm_data = voc.float2pcm(in_data)
             data = pcm_data.tobytes('C')
 
@@ -205,7 +205,10 @@ def listen(udp_socket, listen_stream, hang_up_button):
                 data, sender_address = udp_socket.recvfrom(1046)
 
                 # unprotect RTP
-                rtp = rx_session.unprotect(data)
+                try:
+                    rtp = rx_session.unprotect(data)
+                except:
+                    continue
                 
                 # Parse the RTP header
                 rtp_header = utilities.parse_rtp_header(rtp)

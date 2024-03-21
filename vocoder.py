@@ -2,8 +2,9 @@ from numpy import pi, mod, sin, sqrt, tan, linspace, clip
 from scipy.signal import lfilter
 import random
 import numpy as np
+import math
 from scipy.signal import iirfilter
-from pedalboard import Compressor, NoiseGate, Gain
+from pedalboard import Pedalboard, Compressor, NoiseGate, Gain, PitchShift, Distortion, Bitcrush, Chorus, GSMFullRateCompressor, LadderFilter, Phaser, Reverb
 
 #Algorithm based on https://github.com/ederwander/ChannelVocoder/blob/main/EderwanderVocoderOnTheFly.py
 class Vocoder:
@@ -22,7 +23,7 @@ class Vocoder:
 
         self.distortion = distortion
         if(self.distortion < 0.05):
-            self.distortino = 0.05
+            self.distortion = 0.05
         elif(self.distortion > 0.8):
             self.distortion = 0.8
 
@@ -44,9 +45,37 @@ class Vocoder:
         self.numFreqs = 20
         self.a_freq_coeff, self.b_freq_coeff = self.generate_bandpass_coefficients()
 
-        self.comp = Compressor(threshold_db=-15, ratio=2.5)
-        self.gate = NoiseGate(threshold_db=-15, ratio=2.5, attack_ms = 0.2, release_ms = 50)
+        self.comp = Compressor(threshold_db=-5, ratio=2.5)
+        self.gate =  NoiseGate(threshold_db=-100, ratio=10, attack_ms = 1.0, release_ms = 100)
         self.gain = Gain(gain_db=5)
+        self.pitch = PitchShift(semitones=3)
+        self.distort = Distortion(drive_db = 35)
+        self.bitcrush = Bitcrush(bit_depth = 4)
+        self.chorus = Chorus(rate_hz = 1.0, depth = 0.25, centre_delay_ms= 7.0, feedback = 0.0, mix = 0.5)
+        self.phone = GSMFullRateCompressor()
+        self.phaser = Phaser(rate_hz = .1, depth = 10, centre_frequency_hz = 1000, feedback = 1, mix = 1)
+        self.ladder = LadderFilter(mode = LadderFilter.Mode.BPF24)
+        self.reverb = Reverb(wet_level = .33, room_size = 1)
+
+                # Create a Pedalboard with audio effects
+        self.pedalboard = Pedalboard([
+            
+            #NoiseGate(threshold_db=-100, ratio=10, attack_ms = 1.0, release_ms = 100),
+            Compressor(threshold_db=-5, ratio=2.5),
+            Gain(gain_db=5),
+            NoiseGate(threshold_db=-100, ratio=10, attack_ms = 1.0, release_ms = 100),
+            Distortion(drive_db = 35),
+            PitchShift(semitones=2),  # Shift pitch down by 3 semitones
+            #Phaser(rate_hz=20, depth=2, feedback=1, mix = .5),  # Phaser effect
+            Reverb(wet_level = .33, room_size = 1)
+            
+        ])
+
+
+        # Example usage
+        self.sin_sample_rate = 44100  # Sample rate in samples per second (Hz)
+        self.sin_frequency = 440  # Frequency of the sine wave in Hertz (Hz)
+        self.sin_amplitude = 2 / math.pi  # Adjusted amplitude to scale output between -2 and 2
 
 
     def generate_bandpass_coefficients(self):
@@ -75,7 +104,25 @@ class Vocoder:
             # print("________________")
         return a, b
 
-    
+    def sine_wave(self):
+        """
+        Generate a sine wave with the specified frequency, amplitude, and sample rate.
+
+        Parameters:
+            frequency (float): The frequency of the sine wave in Hertz (Hz).
+            amplitude (float): The amplitude of the sine wave.
+            sample_rate (int): The sample rate of the sine wave in samples per second (Hz).
+
+        Yields:
+            float: The next sample value of the sine wave.
+        """
+        t = 0
+        while True:
+            value = self.sin_amplitude * math.sin(2 * math.pi * self.sin_frequency * t)
+            yield value
+            t += 1 / self.sin_sample_rate
+
+
 
 
     #generate a pitching frequency between 300hz and 1200hz
@@ -114,9 +161,7 @@ class Vocoder:
         carriersignal=0
         carriersignal=self.carrier(length)
         vout=0
-        data = self.gate.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
-        data = self.comp.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
-        data = self.gain.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
+        self.audio_effects(data)
         for i in range(0, self.numFreqs):
             bandpasscarrier = lfilter(self.b_freq_coeff[i], self.a_freq_coeff[i], carriersignal)
             bandpassmodulator = lfilter(self.b_freq_coeff[i], self.a_freq_coeff[i], data)
@@ -127,6 +172,27 @@ class Vocoder:
         vout = self.comp.process(input_array = vout, sample_rate = self.rate, buffer_size = self.chunk)
         vout = self.gain.process(input_array = vout, sample_rate = self.rate, buffer_size = self.chunk)
         return vout
+
+
+    def audio_effects(self, data):
+        data = self.gate.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
+        data = self.comp.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
+        data = self.gain.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
+        data = self.distort.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
+        # pitch = self.sine_wave()
+        # print(pitch)
+        # self.pitch = PitchShift(semitones=pitch)
+        data = self.pitch.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
+        data = self.reverb.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
+        #data = self.bitcrush.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
+        #data = self.chorus.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
+        #data = self.phone.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
+        #data = self.ladder.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
+        #self.phaser.depth = random.randrange(-5, 5, 1)
+        #data = self.phaser.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
+        #data = self.pedalboard.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
+        return data
+
 
     # from https://gist.github.com/HudsonHuang/fbdf8e9af7993fe2a91620d3fb86a182
     def float2pcm(self, sig, dtype='int16'):

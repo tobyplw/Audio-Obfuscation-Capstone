@@ -23,8 +23,10 @@ import stun
 import json
 import shared
 import call
+import utilities
 
-
+global last_words
+last_words = ""
 global input_device_name_to_info_mapping
 input_device_name_to_info_mapping = {}
 
@@ -286,6 +288,12 @@ def open_call_window(username):
         mute_button.configure(image=unmute_photo)
         mute_button.configure(command=mute_on)
 
+    def obfuscate_toggle():
+        if shared.obfuscation_on.is_set():
+            shared.obfuscation_on.clear()
+        else:
+            shared.obfuscation_on.set()
+
     call_window = Toplevel(app)
     call_window.title("Call")
     call_window.geometry("1400x700")
@@ -351,7 +359,7 @@ def open_call_window(username):
                                 width=40, 
                                 corner_radius=40, 
                                 fg_color="white", 
-                                command=mute_call)
+                                command=obfuscate_toggle)
     # obfuscate_button.pack(side="left", padx=10)
     
     transcribe_image = Image.open("assets/transcribe.png")
@@ -573,7 +581,11 @@ transcribe_textbox = ctk.CTkTextbox(transcribe_frame, height=400, width=500)
 transcribe_textbox.pack(pady=10, padx=20, expand=True, fill='both')
 transcribe_textbox.configure(state= "disabled")
 
+
 def update_transcribe_textbox(text):
+    # global last_words
+    # result = utilities.subtract_strings(text, last_words)
+    # last_words = text
     def callback():
         transcribe_textbox.configure(state="normal")
         transcribe_textbox.insert(tk.END,text)

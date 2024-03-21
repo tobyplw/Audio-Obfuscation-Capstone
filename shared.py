@@ -16,7 +16,7 @@ client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 SERVER_HOST = '13.58.118.16'
 SERVER_PORT = 12345
 
-obfuscation_on = False
+obfuscation_on = Event()
 
 #definitly need to hide this somehow
 key = (b'\x00' * 30)
