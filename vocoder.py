@@ -175,14 +175,14 @@ class Vocoder:
 
 
     def audio_effects(self, data):
-        data = self.gate.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
         data = self.comp.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
         data = self.gain.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
         data = self.distort.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
+        data = self.pitch.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
         # pitch = self.sine_wave()
         # print(pitch)
         # self.pitch = PitchShift(semitones=pitch)
-        data = self.pitch.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
+
         data = self.reverb.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
         data = self.gate.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
         #data = self.bitcrush.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
