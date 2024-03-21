@@ -48,7 +48,7 @@ class Vocoder:
         self.comp = Compressor(threshold_db=-5, ratio=2.5)
         self.gate =  NoiseGate(threshold_db=-100, ratio=10, attack_ms = 1.0, release_ms = 100)
         self.gain = Gain(gain_db=5)
-        self.pitch = PitchShift(semitones=3)
+        self.pitch = PitchShift(semitones=-2)
         self.distort = Distortion(drive_db = 15)
         self.bitcrush = Bitcrush(bit_depth = 4)
         self.chorus = Chorus(rate_hz = 1.0, depth = 0.25, centre_delay_ms= 7.0, feedback = 0.0, mix = 0.5)
