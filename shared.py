@@ -5,6 +5,7 @@ current_user = ""
 input_device = None
 output_device = None
 is_muted = False
+transcription_language = 'english'
 
 stop_transcription_event = Event()
 stop_thread_event = Event()

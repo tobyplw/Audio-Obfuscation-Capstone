@@ -25,6 +25,16 @@ import shared
 import call
 import utilities
 
+# Translator Dependencies
+import googletrans
+from googletrans import Translator
+
+# Initialize translator
+translator = Translator()
+
+# List of available languages
+LANGUAGES_LIST = list(googletrans.LANGUAGES.values())
+
 global last_words
 last_words = ""
 global input_device_name_to_info_mapping
@@ -432,6 +442,11 @@ def comboboxin_callback(choice):
     else:
         print("Selected device not found in mapping.")
 
+comboboxin = ctk.CTkOptionMenu(call_frame, values=[], command=comboboxin_callback, width=200)
+# combobox.grid(row=0, column=0, padx=20, pady=10)
+comboboxin.set("Select Input")  # set initial value
+comboboxin.pack(pady=10)
+
 def comboboxout_callback(choice):
     # Assuming `shared.py` has been imported as `shared`
     if choice in output_device_name_to_info_mapping:
@@ -440,17 +455,20 @@ def comboboxout_callback(choice):
     else:
         print("Selected device not found in mapping.")
 
-comboboxin = ctk.CTkOptionMenu(call_frame, values=[], command=comboboxin_callback, width=200)
-# combobox.grid(row=0, column=0, padx=20, pady=10)
-
-comboboxin.set("Select Input")  # set initial value
-comboboxin.pack(pady=10)
-
 comboboxout = ctk.CTkOptionMenu(call_frame, values=[], command=comboboxout_callback, width=200)
 # combobox.grid(row=0, column=0, padx=20, pady=10)
-
 comboboxout.set("Select Output")  # set initial value
 comboboxout.pack(pady=10)
+
+# Update the translation language when selected
+def translation_dropdown_callback(choice):
+    shared.transcription_language = choice
+    print(f"Language selected: {shared.transcription_language}")
+
+# Create the button
+combobox_translation = ctk.CTkOptionMenu(call_frame, values=LANGUAGES_LIST, command=translation_dropdown_callback, width=200)
+combobox_translation.set("Select Translation Language")
+combobox_translation.pack(pady=10)
 
 # Initialize Start Recording Button but don't pack it initially
 start_recording_button = ctk.CTkButton(call_frame, text="Start Recording", command=start_recording)
@@ -586,9 +604,10 @@ def update_transcribe_textbox(text):
     # global last_words
     # result = utilities.subtract_strings(text, last_words)
     # last_words = text
+    translation = translator.translate(text, src='en', dest=shared.transcription_language)
     def callback():
         transcribe_textbox.configure(state="normal")
-        transcribe_textbox.insert(tk.END,text)
+        transcribe_textbox.insert(tk.END,translation.text)
         transcribe_textbox.configure(state="disabled")
     app.after(0, callback)
 
@@ -627,7 +646,7 @@ back_button_transcribe.pack(pady=20, padx=20)
 
 
 # Setting up the log_in_frame
-log_in_frame_content = ctk.CTkFrame(log_in_frame,fg_color='transparent')
+log_in_frame_content = ctk.CTkFrame(log_in_frame, fg_color='transparent')
 log_in_frame_content.pack(pady=20, padx=20, expand=True)
 
 welcome = ctk.CTkLabel(log_in_frame_content, text="Login To Your Account\n", font=('Helvetica', 36), fg_color='transparent')
