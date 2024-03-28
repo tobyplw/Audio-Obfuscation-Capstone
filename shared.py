@@ -6,6 +6,7 @@ input_device = None
 output_device = None
 is_muted = False
 transcription_language = 'english'
+spoken_language = 'english'
 
 stop_transcription_event = Event()
 stop_thread_event = Event()
@@ -23,3 +24,28 @@ obfuscation_on = Event()
 key = (b'\x00' * 30)
 
 Poll_Time = 1
+
+languages = {
+    'Czech' : 'cs',
+    'Danish' : 'da',
+    'Dutch' : 'nl',
+    'English' : 'en',
+    'French' : 'fr',
+    'German' : 'de',
+    'Greek' : 'el',
+    'Hindi' : 'hi',
+    'Indonesian' : 'id',
+    'Italian' : 'it',
+    'Japanese' : 'ja',
+    'Korean' : 'ko',
+    'Malay' : 'ms',
+    'Norwegian' : 'no',
+    'Polish' : 'pl',
+    'Portuguese' : 'pt',
+    'Russian' : 'ru',
+    'Spanish' : 'es',
+    'Swedish' : 'sv',
+    'Turkish' : 'tr',
+    'Ukrainian' : 'uk',
+    'Vietnamese' : 'vi'
+}

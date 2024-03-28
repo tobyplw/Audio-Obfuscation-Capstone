@@ -460,14 +460,24 @@ comboboxout = ctk.CTkOptionMenu(call_frame, values=[], command=comboboxout_callb
 comboboxout.set("Select Output")  # set initial value
 comboboxout.pack(pady=10)
 
-# Update the translation language when selected
-def translation_dropdown_callback(choice):
-    shared.transcription_language = choice
-    print(f"Language selected: {shared.transcription_language}")
+# Update transcription language dropdown
+def transcription_language_callback(choice):
+    shared.transcription_language = shared.languages[choice]
+    print(f"Transcription language selected: {choice}")
 
 # Create the button
-combobox_translation = ctk.CTkOptionMenu(call_frame, values=LANGUAGES_LIST, command=translation_dropdown_callback, width=200)
-combobox_translation.set("Select Translation Language")
+combobox_translation = ctk.CTkOptionMenu(call_frame, values=list(shared.languages.keys()), command=transcription_language_callback, width=200)
+combobox_translation.set("Select Transcription Language")
+combobox_translation.pack(pady=10)
+
+# Update spoken language dropdown
+def spoken_language_callback(choice):
+    shared.spoken_language = shared.languages[choice]
+    print(f"Spoken language selected: {choice}")
+
+# Create the button
+combobox_translation = ctk.CTkOptionMenu(call_frame, values=list(shared.languages.keys()), command=spoken_language_callback, width=200)
+combobox_translation.set("Select Spoken Language")
 combobox_translation.pack(pady=10)
 
 # Initialize Start Recording Button but don't pack it initially
@@ -604,10 +614,11 @@ def update_transcribe_textbox(text):
     # global last_words
     # result = utilities.subtract_strings(text, last_words)
     # last_words = text
-    translation = translator.translate(text, src='en', dest=shared.transcription_language)
+    translation = translator.translate(text, src=shared.spoken_language, dest=shared.transcription_language)
     def callback():
         transcribe_textbox.configure(state="normal")
-        transcribe_textbox.insert(tk.END,translation.text)
+        transcribe_textbox.insert(tk.END, translation.text)
+        transcribe_textbox.insert(tk.END, "\n")
         transcribe_textbox.configure(state="disabled")
     app.after(0, callback)
 

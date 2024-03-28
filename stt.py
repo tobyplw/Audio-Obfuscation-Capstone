@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 import logging, verboselogs
 from time import sleep
+import shared
 
 from deepgram import (
     DeepgramClient,
@@ -10,12 +11,13 @@ from deepgram import (
     Microphone,
 )
 
-
 load_dotenv()
 
 def start_speech_to_text_transcription(update_textbox_callback, stop_event):
     try:
-        deepgram: DeepgramClient = DeepgramClient(api_key="5e31c0c3ca3a70e248b06ebc0917f9c8571f3d94")
+
+        config = DeepgramClientOptions(verbose=logging.DEBUG, options={"keepalive": "true"})
+        deepgram: DeepgramClient = DeepgramClient(api_key="5e31c0c3ca3a70e248b06ebc0917f9c8571f3d94", config=config)
 
         dg_connection = deepgram.listen.live.v("1")
 
@@ -41,10 +43,12 @@ def start_speech_to_text_transcription(update_textbox_callback, stop_event):
         options: LiveOptions = LiveOptions(
             model="nova-2",
             punctuate=True,
-            language="en-US",
+            language=shared.spoken_language,
             encoding="linear16",
             channels=1,
             sample_rate=16000,
+            diarize=True,
+            interim_results=True,
         )
         dg_connection.start(options)
 
