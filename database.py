@@ -102,3 +102,17 @@ def get_calls(username):
 
     return call_logs
 
+    def add_devices(username, input_device, output_device):
+        # Create or update the document with the user's device preferences
+        user_update_result = Users.update_one(
+            {"username": username},
+            {"$set": {"input_device": input_device, "output_device": output_device}},
+            upsert=True
+        )
+        # Check if the operation was successful
+        if user_update_result.matched_count > 0:
+            print(f"Updated devices for user: {username}")
+        elif user_update_result.upserted_id is not None:
+            print(f"Created device preferences for new user: {username}")
+        else:
+            print("No changes made to the database.")

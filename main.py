@@ -8,6 +8,7 @@ from datetime import datetime  # Import datetime to fetch the current time
 from PIL import Image # from tkinter import PhotoImage
 import threading
 from threading import Thread
+import pyperclip
 
 import pyaudio
 import database
@@ -199,9 +200,10 @@ main_frame = ctk.CTkFrame(app)
 call_frame = ctk.CTkFrame(app)
 logs_frame = ctk.CTkFrame(app)  # Frame for logs
 transcribe_frame = ctk.CTkFrame(app)
+settings_frame = ctk.CTkFrame(app)  # Create settings frame
 
 
-for frame in (log_in_frame, sign_up_frame, main_frame, call_frame, logs_frame, transcribe_frame):
+for frame in (log_in_frame, sign_up_frame, main_frame, call_frame, logs_frame, transcribe_frame, settings_frame):
     frame.grid(row=0, column=0, sticky='nsew')
 
 # Define clock font settings with the correct parameters for customtkinter
@@ -234,8 +236,8 @@ button_frame.pack(expand=True)
 
 def on_start_call_button_clicked():
     raise_frame(call_frame)  # Show the call frame
-    update_input_devices_combobox()  # Update the devices combobox
-    update_output_devices_combobox()
+    # update_input_devices_combobox()  # Update the devices combobox
+    # update_output_devices_combobox()
 
 
 start_call_button = ctk.CTkButton(button_frame, text="Start Call", command=on_start_call_button_clicked, width=200, height=40)
@@ -247,9 +249,11 @@ access_logs_button.pack(side='left', padx=10, pady=10, anchor='center')
 transcribe_button = ctk.CTkButton(button_frame, text="Transcribe", command=lambda: raise_frame(transcribe_frame), width=200, height=40)
 transcribe_button.pack(side='left', padx=10, pady=10, anchor='center')
 
+navigate_settings_button = ctk.CTkButton(main_frame_content, text="Settings", command=lambda: raise_frame(settings_frame), width=200, height=40)
+navigate_settings_button.pack(pady=10)
 
-button = ctk.CTkButton(button_frame, text='Light', command = lambda: ctk.set_appearance_mode('light'), width=200, height=40)
-button.pack(side='left', padx=10, pady=10, anchor='center')
+# button = ctk.CTkButton(button_frame, text='Light', command = lambda: ctk.set_appearance_mode('light'), width=200, height=40)
+# button.pack(side='left', padx=10, pady=10, anchor='center')
 
 
 def sign_out():
@@ -263,11 +267,15 @@ sign_out_button = ctk.CTkButton(main_frame_content, text="Sign Out", command=sig
 sign_out_button.pack(pady=(10, 20), padx=20, anchor='e')
 
 
+# Settings Frame Content
+settings_label = ctk.CTkLabel(settings_frame, text="Settings", font=("Helvetica", 24))
+settings_label.pack(pady=20)
+
 # Call Frame Content
 
 
 
-call_label = ctk.CTkLabel(call_frame, text="Enter Callee's Username:")
+call_label = ctk.CTkLabel(call_frame, text="Enter Callee's Username:", font=("Arial", 20, "bold"))
 call_label.pack(pady=(30,20) , padx=20)
 
 callee_id_entry = ctk.CTkEntry(call_frame)
@@ -418,8 +426,92 @@ def call_user():
     start_recording_button.pack(before=back_button_call, pady=10, padx=20)  # Adjusted to pack before the Back button
 
 
-call_button = ctk.CTkButton(call_frame, text="Call", command=call_user)
+call_button = ctk.CTkButton(call_frame, text="Call", fg_color='green', command=call_user)
 call_button.pack(pady=10, padx=20)
+
+contact_label = ctk.CTkLabel(call_frame, text="Your Contacts:", font=("Arial", 20, "bold"))
+contact_label.pack(pady=(30,20) , padx=20)
+
+contacts = [
+    {"Username": "1234-342", "Nickname": "Alice Smith"},
+    {"Username": "1803-235", "Nickname": "Bob Johnson"},
+    {"Username": "4738-265", "Nickname": "Charlie Brown"},
+    {"Username": "2398-658", "Nickname": "Dana White"},
+    {"Username": "2304-897", "Nickname": "Eli Woods"},
+    {"Username": "9876-584", "Nickname": "Fiona Gallagher"},
+    {"Username": "9865-395", "Nickname": "George Black"}
+]
+
+# Frame for the search box and button
+search_frame = ctk.CTkFrame(call_frame, fg_color='transparent')
+search_frame.pack(padx=10, pady=5)
+# search_frame.grid_columnconfigure((0, 1), weight=1)  # Make username and nickname entries expand equally
+
+# Entry for adding a new username
+new_username_entry = ctk.CTkEntry(search_frame, placeholder_text="Enter username")
+new_username_entry.pack(side='left', padx=5)
+
+# Entry for adding a new nickname
+new_nickname_entry = ctk.CTkEntry(search_frame, placeholder_text="Enter nickname")
+new_nickname_entry.pack(side='left', padx=5)
+
+
+def handle_add_contact():
+    username = new_username_entry.get().strip()
+    nickname = new_nickname_entry.get().strip()
+    if username and nickname:
+        new_contact = {"Username": username, "Nickname": nickname}
+        contacts.append(new_contact)
+        update_contacts_display()
+        new_username_entry.delete(0, 'end')
+        new_nickname_entry.delete(0, 'end')
+    else:
+        messagebox.showwarning("Missing Information", "Please enter BOTH a username and a nickname.")
+
+def update_contacts_display(filtered_contacts=None):
+    for widget in scrollable_contacts_frame.winfo_children():
+        widget.destroy()
+    if filtered_contacts is None:
+        filtered_contacts = contacts
+    for contact in filtered_contacts:
+        display_name = contact.get("Username")
+        nickname = contact.get("Nickname")
+        contact_label = ctk.CTkLabel(scrollable_contacts_frame, text=display_name)
+        contact_label.pack(pady=2, anchor='w')
+        contact_label.bind("<Enter>", lambda event, nickname=nickname: show_nickname(event, nickname))
+        contact_label.bind("<Leave>", hide_nickname)
+        contact_label.bind("<Button-1>", lambda event, username=display_name: copy_to_clipboard(username))
+
+# Button to trigger adding a new contact
+add_contact_button = ctk.CTkButton(search_frame, text="Add Contact", command=handle_add_contact, width=50)
+add_contact_button.pack(side='left', padx=10)
+
+# Scrollable Frame for displaying contacts
+scrollable_contacts_frame = ctk.CTkScrollableFrame(call_frame, width=380, height=200, corner_radius=10)
+scrollable_contacts_frame.pack(pady=10, padx=10)
+# call_frame.grid_rowconfigure(1, weight=1)
+# call_frame.grid_columnconfigure([0, 1, 2], weight=1)
+
+# Display nickname on hover label
+nickname_display_label = ctk.CTkLabel(call_frame, text="", height=20)
+nickname_display_label.pack(side='bottom', fill='x', padx=10, pady=5)
+nickname_display_label.pack_forget()  # Initially, hide the label
+
+
+def show_nickname(event, nickname):
+    nickname_display_label.configure(text=f"Nickname: {nickname}")
+    nickname_display_label.pack(side='bottom', fill='x', padx=10, pady=5)
+
+def hide_nickname(event):
+    nickname_display_label.pack_forget()
+    pass
+
+def copy_to_clipboard(username):
+    pyperclip.copy(username)
+    print(f"Copied to clipboard: {username}")
+
+# # Initially populate the scrollable frame with all contacts
+update_contacts_display()
 
 # test_button2 = ctk.CTkButton(call_frame, text="Receive Call", command=receive_call)
 # test_button2.pack(pady=20)
@@ -440,13 +532,13 @@ def comboboxout_callback(choice):
     else:
         print("Selected device not found in mapping.")
 
-comboboxin = ctk.CTkOptionMenu(call_frame, values=[], command=comboboxin_callback, width=200)
+comboboxin = ctk.CTkOptionMenu(settings_frame, values=[], command=comboboxin_callback, width=200)
 # combobox.grid(row=0, column=0, padx=20, pady=10)
 
 comboboxin.set("Select Input")  # set initial value
 comboboxin.pack(pady=10)
 
-comboboxout = ctk.CTkOptionMenu(call_frame, values=[], command=comboboxout_callback, width=200)
+comboboxout = ctk.CTkOptionMenu(settings_frame, values=[], command=comboboxout_callback, width=200)
 # combobox.grid(row=0, column=0, padx=20, pady=10)
 
 comboboxout.set("Select Output")  # set initial value
@@ -466,9 +558,11 @@ def update_input_devices_combobox():
         comboboxin.destroy()
 
     # Recreate the combobox with the new values
-    comboboxin = ctk.CTkOptionMenu(call_frame, values=device_names, height=40, width=200, command=comboboxin_callback)
+    comboboxin = ctk.CTkOptionMenu(settings_frame, values=device_names, height=40, width=200, command=comboboxin_callback)
+    input_label = ctk.CTkLabel(settings_frame, text="User Input:", font=("Arial", 17))
+    input_label.pack(pady=(30,20) , padx=20)
     comboboxin.pack(pady=10)
-    comboboxin.set("Select Input")  # Optionally set a default value
+    comboboxin.set(device_names[0])  # Optionally set a default value
 
 
 
@@ -483,9 +577,14 @@ def update_output_devices_combobox():
         comboboxout.destroy()
 
     # Recreate the combobox with the new values
-    comboboxout = ctk.CTkOptionMenu(call_frame, values=device_names, height=40, width=200, command=comboboxout_callback)
+    comboboxout = ctk.CTkOptionMenu(settings_frame, values=device_names, height=40, width=200, command=comboboxout_callback)
+    output_label = ctk.CTkLabel(settings_frame, text="User Output:", font=("Arial", 17))
+    output_label.pack(pady=(30,20) , padx=20)
     comboboxout.pack(pady=10)
-    comboboxout.set("Select Output")  # Optionally set a default value
+    comboboxout.set(device_names[0])  # Optionally set a default value
+    # Back button in settings frame to return to main frame
+    back_button_settings = ctk.CTkButton(settings_frame, text="Back to Main", command=lambda: raise_frame(main_frame))
+    back_button_settings.pack(pady=20)
 
 
 def update_input_device_name_to_info_mapping(devices):
@@ -498,8 +597,10 @@ def update_output_device_name_to_info_mapping(devices):
     for device in devices:
         output_device_name_to_info_mapping[device['name']] = device
 
+
 back_button_call = ctk.CTkButton(call_frame, text="Back to Main", command=lambda: raise_frame(main_frame))
 back_button_call.pack(pady=20, padx=20)
+
 
 
 # Logs Frame Content - Placeholder content for now
@@ -548,6 +649,8 @@ def setup_logs_frame(username):
 def sign_in():
     username = username_entry.get()
     password = password_entry.get()
+    update_input_devices_combobox()  # Update the devices combobox
+    update_output_devices_combobox()
     if(database.login(username, password)):
         # Set current user
         shared.current_user = username
