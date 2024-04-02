@@ -249,7 +249,7 @@ access_logs_button.pack(side='left', padx=10, pady=10, anchor='center')
 transcribe_button = ctk.CTkButton(button_frame, text="Transcribe", command=lambda: raise_frame(transcribe_frame), width=200, height=40)
 transcribe_button.pack(side='left', padx=10, pady=10, anchor='center')
 
-navigate_settings_button = ctk.CTkButton(main_frame_content, text="Settings", command=lambda: raise_frame(settings_frame), width=200, height=40)
+navigate_settings_button = ctk.CTkButton(main_frame_content, text="Settings", command=lambda: raise_frame(settings_frame), width=200, height=40, fg_color='grey', hover_color='#6f6e70')
 navigate_settings_button.pack(pady=10)
 
 # button = ctk.CTkButton(button_frame, text='Light', command = lambda: ctk.set_appearance_mode('light'), width=200, height=40)
