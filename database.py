@@ -102,43 +102,44 @@ def get_calls(username):
 
     return call_logs
 
-    def add_devices(username, input_device, output_device):
-        # Create or update the document with the user's device preferences
-        user_update_result = Users.update_one(
-            {"username": username},
-            {"$set": {"input_device": input_device, "output_device": output_device}},
-            upsert=True
-        )
-        # Check if the operation was successful
-        if user_update_result.matched_count > 0:
-            print(f"Updated devices for user: {username}")
-        elif user_update_result.upserted_id is not None:
-            print(f"Created device preferences for new user: {username}")
-        else:
-            print("No changes made to the database.")
+def add_devices(username, input_device, output_device):
+    # Create or update the document with the user's device preferences
+    user_update_result = Users.update_one(
+        {"username": username},
+        {"$set": {"input_device": input_device, "output_device": output_device}},
+        upsert=True
+    )
+    # Check if the operation was successful
+    if user_update_result.matched_count > 0:
+        print(f"Updated devices for user: {username}")
+    elif user_update_result.upserted_id is not None:
+        print(f"Created device preferences for new user: {username}")
+    else:
+        print("No changes made to the database.")
 
-    def add_contact(username, contact_username, contact_nickname):
-        # Fetch the user's document to update
-        user = Users.find_one({"username": username})
+def add_contact(username, contact_username, contact_nickname):
+    # Fetch the user's document to update
+    user = Users.find_one({"username": username})
 
-        if user:
-            # Check if "contacts" field exists, if not create it as an empty list
-            if "contacts" not in user:
-                user["contacts"] = []
+    if user:
+        # Check if "contacts" field exists, if not create it as an empty list
+        if "contacts" not in user:
+            user["contacts"] = []
         
-            # Append the new contact to the user's contacts list
-            # Ensuring no duplicate contact is added
-            if not any(contact['username'] == contact_username for contact in user["contacts"]):
-                user["contacts"].append({"username": contact_username, "nickname": contact_nickname})
+        # Append the new contact to the user's contacts list
+        # Ensuring no duplicate contact is added
+        if not any(contact['username'] == contact_username for contact in user["contacts"]):
+            user["contacts"].append({"username": contact_username, "nickname": contact_nickname})
         
-                # Update the user document with the new contacts list
-                update_result = Users.update_one({"username": username}, {"$set": {"contacts": user["contacts"]}})
+            # Update the user document with the new contacts list
+            update_result = Users.update_one({"username": username}, {"$set": {"contacts": user["contacts"]}})
             
-                if update_result.modified_count > 0:
-                    print(f"Contact {contact_username} added to {username}'s contacts.")
-                else:
-                    print("No changes made to the database.")
+            if update_result.modified_count > 0:
+                print(f"Contact {contact_username} added to {username}'s contacts.")
             else:
-                print("Contact already exists.")
+                print("No changes made to the database.")
         else:
-            print("User not found.")
+            print("Contact already exists.")
+    else:
+        print("User not found.")
+

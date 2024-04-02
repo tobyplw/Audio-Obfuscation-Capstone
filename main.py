@@ -461,6 +461,7 @@ def handle_add_contact():
     nickname = new_nickname_entry.get().strip()
     if username and nickname:
         new_contact = {"Username": username, "Nickname": nickname}
+        # database.add_contact(, username, nickname)
         contacts.append(new_contact)
         update_contacts_display()
         new_username_entry.delete(0, 'end')
