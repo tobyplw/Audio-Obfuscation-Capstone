@@ -102,20 +102,36 @@ def get_calls(username):
 
     return call_logs
 
-def add_devices(username, input_device, output_device):
-    # Create or update the document with the user's device preferences
+def add_input_device(username, input_device):
+    # Update the document with the user's input device preference
     user_update_result = Users.update_one(
         {"username": username},
-        {"$set": {"input_device": input_device, "output_device": output_device}},
+        {"$set": {"input_device": input_device}},
         upsert=True
     )
     # Check if the operation was successful
     if user_update_result.matched_count > 0:
-        print(f"Updated devices for user: {username}")
+        print(f"Updated input device for user: {username}")
     elif user_update_result.upserted_id is not None:
-        print(f"Created device preferences for new user: {username}")
+        print(f"Created input device preference for new user: {username}")
     else:
         print("No changes made to the database.")
+
+def add_output_device(username, output_device):
+    # Update the document with the user's output device preference
+    user_update_result = Users.update_one(
+        {"username": username},
+        {"$set": {"output_device": output_device}},
+        upsert=True
+    )
+    # Check if the operation was successful
+    if user_update_result.matched_count > 0:
+        print(f"Updated output device for user: {username}")
+    elif user_update_result.upserted_id is not None:
+        print(f"Created output device preference for new user: {username}")
+    else:
+        print("No changes made to the database.")
+
 
 def add_contact(username, contact_username, contact_nickname):
     # Fetch the user's document to update
