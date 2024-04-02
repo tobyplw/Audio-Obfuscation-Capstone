@@ -433,13 +433,13 @@ contact_label = ctk.CTkLabel(call_frame, text="Your Contacts:", font=("Arial", 2
 contact_label.pack(pady=(30,20) , padx=20)
 
 contacts = [
-    {"Username": "1234-342", "Nickname": "Alice Smith"},
-    {"Username": "1803-235", "Nickname": "Bob Johnson"},
-    {"Username": "4738-265", "Nickname": "Charlie Brown"},
-    {"Username": "2398-658", "Nickname": "Dana White"},
-    {"Username": "2304-897", "Nickname": "Eli Woods"},
-    {"Username": "9876-584", "Nickname": "Fiona Gallagher"},
-    {"Username": "9865-395", "Nickname": "George Black"}
+    {"Username": "tobyplw", "Nickname": "SFC. Toby Williams"},
+    {"Username": "1803-235", "Nickname": "SMA. Shafin Alam"},
+    {"Username": "tyler", "Nickname": "CPO. Tyler Mox"},
+    {"Username": "azwad", "Nickname": "Cpl. Azwad Alam"},
+    {"Username": "2304-897", "Nickname": "Sgt. Eli Woods"},
+    {"Username": "9876-584", "Nickname": "Po1. Bob Smith"},
+    {"Username": "9865-395", "Nickname": "TSgt. George Black"}
 ]
 
 # Frame for the search box and button
@@ -480,7 +480,7 @@ def update_contacts_display(filtered_contacts=None):
         contact_label.pack(pady=2, anchor='w')
         contact_label.bind("<Enter>", lambda event, nickname=nickname: show_nickname(event, nickname))
         contact_label.bind("<Leave>", hide_nickname)
-        contact_label.bind("<Button-1>", lambda event, username=display_name: copy_to_clipboard(username))
+        contact_label.bind("<Button-1>", lambda event, username=display_name: callee_id_entry.delete(0, tk.END) or callee_id_entry.insert(0, username))
 
 # Button to trigger adding a new contact
 add_contact_button = ctk.CTkButton(search_frame, text="Add Contact", command=handle_add_contact, width=50)
