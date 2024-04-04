@@ -1,5 +1,7 @@
 import time
 import threading
+import socket
+from threading import Event
 
 class CallSession:
     def __init__(self, caller, callee, on_mute_callback=None, on_unmute_callback=None, on_end_call=None):
@@ -10,7 +12,8 @@ class CallSession:
         self.duration = 0
         self.transcription = ""
         self.transcription_thread = None
-        self.stop_transcription_event = threading.Event()
+        self.stop_transcription_event = Event()
+        self.call_end = Event()
         # Callbacks
         self.on_mute_callback = on_mute_callback
         self.on_unmute_callback = on_unmute_callback
@@ -49,20 +52,25 @@ class CallSession:
             pass
 
 class User:
-    def __init__(self, username, input_device=None, output_device=None):
+    def __init__(self, username):
         self.username = username
-        self.input_device = input_device
-        self.output_device = output_device
+        self.input_device = None
+        self.output_device = None
         self.is_muted = False
-        self.is_in_call = False
+        self.obfuscation_on = Event()
+        self.in_call = Event()
         self.current_call = None
+        self.transcription_language = 'English'
+        self.spoken_language = 'English'
+        self.stop_transcription = Event()
+        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     # def mute(self):
     #     self.is_muted = not self.is_muted
     #     return self.is_muted
 
     def start_call(self, call_session):
-        self.is_in_call = True
+        self.in_call = True
         self.current_call = call_session
 
     def end_call(self):
@@ -74,3 +82,21 @@ class User:
 
     def set_output_device(self, device):
         self.output_device = device
+
+    def set_transcription_language(self, language):
+        self.transcription_language = language
+
+    def set_spoken_language(self, language): 
+        self.spoken_language = language
+
+class Server:
+    def __init__(self):
+        self.server_host = '13.58.118.16'
+        self.server_port = 12345
+        self.poll_time = 1
+
+    def get_server_host(self):
+        return self.server_host
+    
+    def get_server_port(self):
+        return self.server_port
