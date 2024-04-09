@@ -436,7 +436,7 @@ contacts = [
     {"Username": "tobyplw", "Nickname": "SFC. Toby Williams"},
     {"Username": "1803-235", "Nickname": "SMA. Shafin Alam"},
     {"Username": "tyler", "Nickname": "CPO. Tyler Mox"},
-    {"Username": "azwad", "Nickname": "Cpl. Azwad Alam"},
+    {"Username": "1238-234", "Nickname": "Cpl. Azwad Alam"},
     {"Username": "2304-897", "Nickname": "Sgt. Eli Woods"},
     {"Username": "9876-584", "Nickname": "Po1. Bob Smith"},
     {"Username": "9865-395", "Nickname": "TSgt. George Black"}
@@ -461,7 +461,7 @@ def handle_add_contact():
     nickname = new_nickname_entry.get().strip()
     if username and nickname:
         new_contact = {"Username": username, "Nickname": nickname}
-        # database.add_contact(, username, nickname)
+        database.add_contact(shared.current_user, username, nickname)
         contacts.append(new_contact)
         update_contacts_display()
         new_username_entry.delete(0, 'end')
