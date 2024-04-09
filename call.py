@@ -12,6 +12,7 @@ from vocoder import Vocoder
 import numpy as np
 import database as db
 import utilities
+import json
 
 DEBUG = 0
 # CONSTANTS FOR PyAudio
@@ -142,20 +143,19 @@ def incoming_buffer(buffer, rtp, seq_number, time_delta = 0):
         buffer[seq_number] = rtp
         return None
 
-def talk(udp_socket, record_stream, callee_username, destination_ip, destination_port, user, call_session):
-    ssrc = 5678
+def talk(udp_socket, record_stream, callee_username, user, call_session):
+    
     payload_type = 0
     voc = Vocoder(create_random_seed=False, rate=RATE, chunk=CHUNK_SIZE_TALK, distortion=0.10)
 
     # Protect RTP
-    tx_policy = Policy(key=key, ssrc_type=Policy.SSRC_ANY_OUTBOUND)
-    tx_session = Session(policy=tx_policy)
-    sequence_number = 0
-    print("Sending audio to " + destination_ip)
+
+
+    print("Sending audio to " + call_session.destination_ip)
     try:
         while not call_session.call_end.is_set():
             current_time_ms = int(time.time() * 1000) % (1 << 32)
-            rtp_header = utilities.create_rtp_header(sequence_number, current_time_ms, ssrc, payload_type)
+            rtp_header = utilities.create_rtp_header(call_session.get_sequence_number(), current_time_ms, call_session.ssrc, payload_type = 0)
             raw_data = record_stream.read(CHUNK_SIZE_TALK, exception_on_overflow=False)
             in_data = np.frombuffer(raw_data, dtype=np.float32)
 
@@ -168,24 +168,23 @@ def talk(udp_socket, record_stream, callee_username, destination_ip, destination
 
             # Check if microphone is muted
             if not user.is_muted:
-                srtp = tx_session.protect(packet)
-                udp_socket.sendto(srtp, (destination_ip, destination_port))
+                srtp = call_session.tx_session.protect(packet)
+                udp_socket.sendto(srtp, (call_session.destination_ip, call_session.destination_port))
             else:
                 # If muted, you might want to do something (like sending silence or just skipping)
                 pass
 
-            sequence_number += 1
     except KeyboardInterrupt:
         udp_socket.close()
         record_stream.close()
     
     i = 0
     while i < 10:
-        rtp_header = utilities.create_rtp_header(sequence_number, current_time_ms, ssrc, payload_type = 2)
+        rtp_header = utilities.create_rtp_header(call_session.get_sequence_number, current_time_ms, call_session.ssrc, payload_type = 2)
         data = bytes(1024)
         packet = rtp_header + data
-        srtp = tx_session.protect(packet)
-        udp_socket.sendto(srtp, (destination_ip, destination_port))
+        srtp = call_session.tx_session.protect(packet)
+        udp_socket.sendto(srtp, (call_session.destination_ip, call_session.destination_port))
         sequence_number+=1
         i+=1
     print("Talk Ending")
@@ -217,8 +216,7 @@ def listen(udp_socket, listen_stream, hang_up_button, call_session):
                     hang_up_button.invoke()
                     return
                 if rtp_header["payload_type"] == 1:
-                    #handle Transcriptions
-                    pass
+                    call_session.parse_transcription_message(data[12:1036])
                 seq_num = rtp_header["sequence_number"]
                 to_play = incoming_buffer(packet_buffer, rtp, seq_num)
                 #to_play = rtp
@@ -258,6 +256,16 @@ def listen(udp_socket, listen_stream, hang_up_button, call_session):
 
     print("listen ending")
     
+
+def send_transcription_message(call_session, user, message):
+    current_time_ms = int(time.time() * 1000) % (1 << 32)
+    rtp_header = utilities.create_rtp_header(call_session.get_sequence_number, current_time_ms, call_session.ssrc, payload_type = 1)
+    data = json.dumps(message).encode()
+    packet = rtp_header + data
+    srtp = call_session.tx_session.protect(packet)
+    user.udp_socket.sendto(srtp, (call_session.destination_ip, call_session.destination_port))
+
+
 
 def start_audio_stream(user_input_device, user_output_device, audio):
     record_stream = audio.open(format=FORMAT_TALK, 

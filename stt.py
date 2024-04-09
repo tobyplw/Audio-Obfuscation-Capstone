@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 import logging, verboselogs
 from time import sleep
+from call import send_transcription_message
 
 
 from deepgram import (
@@ -14,7 +15,7 @@ from deepgram import (
 
 load_dotenv()
 
-def start_speech_to_text_transcription(update_textbox_callback, stop_event, user):
+def start_speech_to_text_transcription(update_textbox_callback, stop_event, user, call_session):
     id_num = 0
     try:
         deepgram: DeepgramClient = DeepgramClient(api_key="5e31c0c3ca3a70e248b06ebc0917f9c8571f3d94")
@@ -41,7 +42,6 @@ def start_speech_to_text_transcription(update_textbox_callback, stop_event, user
             parsed_message['id'] = id_num
             parsed_message['is_final'] = message.is_final
             if message.is_final:
-                print("here")
                 id_num+=1
             parsed_message['text'] = determineSpeakers(message.channel.alternatives[0].words)
             return parsed_message
@@ -49,14 +49,13 @@ def start_speech_to_text_transcription(update_textbox_callback, stop_event, user
 
         def on_message(self, result, **kwargs):
             parsed_message = parse_message(result)
-            print(parsed_message)
             sentence = result.channel.alternatives[0].transcript
 
 
             if len(sentence) > 0:
-                #print(result)
-                send_message(parse_message)
-                update_textbox_callback(f"Speaker: {sentence}\n")
+                #print(parsed_message)
+                send_transcription_message(call_session, user, parsed_message)
+                #update_textbox_callback(f"Speaker: {sentence}\n")
                 #update_textbox_callback(f" {sentence}")
 
         def on_error(self, error, **kwargs):
@@ -78,7 +77,7 @@ def start_speech_to_text_transcription(update_textbox_callback, stop_event, user
             language=user.spoken_language,
             encoding="linear16",
             channels=1,
-            sample_rate=16000,
+            sample_rate=24000,
         )
         dg_connection.start(options)
 
