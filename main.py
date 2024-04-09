@@ -432,15 +432,15 @@ call_button.pack(pady=10, padx=20)
 contact_label = ctk.CTkLabel(call_frame, text="Your Contacts:", font=("Arial", 20, "bold"))
 contact_label.pack(pady=(30,20) , padx=20)
 
-contacts = [
-    {"Username": "tobyplw", "Nickname": "SFC. Toby Williams"},
-    {"Username": "1803-235", "Nickname": "SMA. Shafin Alam"},
-    {"Username": "tyler", "Nickname": "CPO. Tyler Mox"},
-    {"Username": "1238-234", "Nickname": "Cpl. Azwad Alam"},
-    {"Username": "2304-897", "Nickname": "Sgt. Eli Woods"},
-    {"Username": "9876-584", "Nickname": "Po1. Bob Smith"},
-    {"Username": "9865-395", "Nickname": "TSgt. George Black"}
-]
+# contacts = [
+#     {"Username": "tobyplw", "Nickname": "SFC. Toby Williams"},
+#     {"Username": "1803-235", "Nickname": "SMA. Shafin Alam"},
+#     {"Username": "tyler", "Nickname": "CPO. Tyler Mox"},
+#     {"Username": "1238-234", "Nickname": "Cpl. Azwad Alam"},
+#     {"Username": "2304-897", "Nickname": "Sgt. Eli Woods"},
+#     {"Username": "9876-584", "Nickname": "Po1. Bob Smith"},
+#     {"Username": "9865-395", "Nickname": "TSgt. George Black"}
+# ]
 
 # Frame for the search box and button
 search_frame = ctk.CTkFrame(call_frame, fg_color='transparent')
@@ -460,23 +460,30 @@ def handle_add_contact():
     username = new_username_entry.get().strip()
     nickname = new_nickname_entry.get().strip()
     if username and nickname:
-        new_contact = {"Username": username, "Nickname": nickname}
+        # Add the new contact to the database
         database.add_contact(shared.current_user, username, nickname)
-        contacts.append(new_contact)
+        
+        # Refresh the contacts display
         update_contacts_display()
+        
+        # Clear the input fields
         new_username_entry.delete(0, 'end')
         new_nickname_entry.delete(0, 'end')
     else:
         messagebox.showwarning("Missing Information", "Please enter BOTH a username and a nickname.")
 
+
 def update_contacts_display(filtered_contacts=None):
     for widget in scrollable_contacts_frame.winfo_children():
         widget.destroy()
+
+    # Fetch contacts from the database
     if filtered_contacts is None:
-        filtered_contacts = contacts
+        filtered_contacts = database.get_contacts(shared.current_user)
+
     for contact in filtered_contacts:
-        display_name = contact.get("Username")
-        nickname = contact.get("Nickname")
+        display_name = contact.get("username")  # Adjust field names based on your database schema
+        nickname = contact.get("nickname")
         contact_label = ctk.CTkLabel(scrollable_contacts_frame, text=display_name)
         contact_label.pack(pady=2, anchor='w')
         contact_label.bind("<Enter>", lambda event, nickname=nickname: show_nickname(event, nickname))
@@ -512,7 +519,7 @@ def copy_to_clipboard(username):
     print(f"Copied to clipboard: {username}")
 
 # # Initially populate the scrollable frame with all contacts
-update_contacts_display()
+# update_contacts_display()
 
 # test_button2 = ctk.CTkButton(call_frame, text="Receive Call", command=receive_call)
 # test_button2.pack(pady=20)
@@ -660,6 +667,7 @@ def sign_in():
 
         raise_frame(main_frame)
         setup_logs_frame(username)
+        update_contacts_display()
 
     else:
         messagebox.showinfo("Login Attempt Failed", "The username or password you entered is incorrect.")
