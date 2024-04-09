@@ -271,6 +271,87 @@ sign_out_button.pack(pady=(10, 20), padx=20, anchor='e')
 settings_label = ctk.CTkLabel(settings_frame, text="Settings", font=("Helvetica", 24))
 settings_label.pack(pady=20)
 
+def comboboxin_callback(choice):
+    # Assuming `shared.py` has been imported as `shared`
+    if choice in input_device_name_to_info_mapping:
+        shared.input_device = input_device_name_to_info_mapping[choice]
+        print(f"Device selected: {shared.input_device}")
+    else:
+        print("Selected device not found in mapping.")
+
+def comboboxout_callback(choice):
+    # Assuming `shared.py` has been imported as `shared`
+    if choice in output_device_name_to_info_mapping:
+        shared.output_device = output_device_name_to_info_mapping[choice]
+        print(f"Device selected: {shared.output_device}")
+    else:
+        print("Selected device not found in mapping.")
+
+comboboxin = ctk.CTkOptionMenu(settings_frame, values=[], command=comboboxin_callback, width=200)
+# combobox.grid(row=0, column=0, padx=20, pady=10)
+
+comboboxin.set("Select Input")  # set initial value
+comboboxin.pack(pady=10)
+
+comboboxout = ctk.CTkOptionMenu(settings_frame, values=[], command=comboboxout_callback, width=200)
+# combobox.grid(row=0, column=0, padx=20, pady=10)
+
+comboboxout.set("Select Output")  # set initial value
+comboboxout.pack(pady=10)
+
+# Initialize Start Recording Button but don't pack it initially
+start_recording_button = ctk.CTkButton(call_frame, text="Start Recording", command=start_recording)
+
+def update_input_devices_combobox():
+    global comboboxin, device_name_to_info_mapping
+    input_devices = get_user_input()
+    device_names = [device['name'] for device in input_devices]  # Extract device names
+    update_input_device_name_to_info_mapping(input_devices)  # Update the mapping
+
+    # Destroy the existing combobox (if it exists)
+    if 'comboboxin' in globals():
+        comboboxin.destroy()
+
+    # Recreate the combobox with the new values
+    comboboxin = ctk.CTkOptionMenu(settings_frame, values=device_names, height=40, width=200, command=comboboxin_callback)
+    input_label = ctk.CTkLabel(settings_frame, text="User Input:", font=("Arial", 17))
+    input_label.pack(pady=(30,20) , padx=20)
+    comboboxin.pack(pady=10)
+    comboboxin.set(device_names[0])  # Optionally set a default value
+
+
+
+def update_output_devices_combobox():
+    global comboboxout, output_device_name_to_info_mapping
+    output_devices = get_user_output()
+    device_names = [device['name'] for device in output_devices]  # Extract device names
+    update_output_device_name_to_info_mapping(output_devices)  # Update the mapping
+
+    # Destroy the existing combobox (if it exists)
+    if 'comboboxout' in globals():
+        comboboxout.destroy()
+
+    # Recreate the combobox with the new values
+    comboboxout = ctk.CTkOptionMenu(settings_frame, values=device_names, height=40, width=200, command=comboboxout_callback)
+    output_label = ctk.CTkLabel(settings_frame, text="User Output:", font=("Arial", 17))
+    output_label.pack(pady=(30,20) , padx=20)
+    comboboxout.pack(pady=10)
+    comboboxout.set(device_names[0])  # Optionally set a default value
+    # Back button in settings frame to return to main frame
+    back_button_settings = ctk.CTkButton(settings_frame, text="Back to Main", command=lambda: raise_frame(main_frame))
+    back_button_settings.pack(pady=20)
+
+
+def update_input_device_name_to_info_mapping(devices):
+    global input_device_name_to_info_mapping
+    for device in devices:
+        input_device_name_to_info_mapping[device['name']] = device
+
+def update_output_device_name_to_info_mapping(devices):
+    global output_device_name_to_info_mapping
+    for device in devices:
+        output_device_name_to_info_mapping[device['name']] = device
+
 # Call Frame Content
 
 
@@ -387,12 +468,6 @@ def open_call_window(username):
     mute_button.pack(side="left", padx=25)
     hang_up_button.pack(side="left", padx=25)
 
-    # test_button = ctk.CTkButton(call_window, text="")
-    # test_button.pack(side='bottom')
-
-    # You will need to define mute_call() and hang_up_call(window) functions to handle the logic
-    # for muting/unmuting the call and hanging up respectively.
-
 def mute_call():
     # Logic to mute the call
     print('Mic has been muted.')
@@ -432,16 +507,6 @@ call_button.pack(pady=10, padx=20)
 contact_label = ctk.CTkLabel(call_frame, text="Your Contacts:", font=("Arial", 20, "bold"))
 contact_label.pack(pady=(30,20) , padx=20)
 
-# contacts = [
-#     {"Username": "tobyplw", "Nickname": "SFC. Toby Williams"},
-#     {"Username": "1803-235", "Nickname": "SMA. Shafin Alam"},
-#     {"Username": "tyler", "Nickname": "CPO. Tyler Mox"},
-#     {"Username": "1238-234", "Nickname": "Cpl. Azwad Alam"},
-#     {"Username": "2304-897", "Nickname": "Sgt. Eli Woods"},
-#     {"Username": "9876-584", "Nickname": "Po1. Bob Smith"},
-#     {"Username": "9865-395", "Nickname": "TSgt. George Black"}
-# ]
-
 # Frame for the search box and button
 search_frame = ctk.CTkFrame(call_frame, fg_color='transparent')
 search_frame.pack(padx=10, pady=5)
@@ -452,7 +517,7 @@ new_username_entry = ctk.CTkEntry(search_frame, placeholder_text="Enter username
 new_username_entry.pack(side='left', padx=5)
 
 # Entry for adding a new nickname
-new_nickname_entry = ctk.CTkEntry(search_frame, placeholder_text="Enter nickname")
+new_nickname_entry = ctk.CTkEntry(search_frame, placeholder_text="Enter alias")
 new_nickname_entry.pack(side='left', padx=5)
 
 
@@ -470,7 +535,7 @@ def handle_add_contact():
         new_username_entry.delete(0, 'end')
         new_nickname_entry.delete(0, 'end')
     else:
-        messagebox.showwarning("Missing Information", "Please enter BOTH a username and a nickname.")
+        messagebox.showwarning("Missing Information", "Please enter BOTH a username and an alias.")
 
 
 def update_contacts_display(filtered_contacts=None):
@@ -497,8 +562,6 @@ add_contact_button.pack(side='left', padx=10)
 # Scrollable Frame for displaying contacts
 scrollable_contacts_frame = ctk.CTkScrollableFrame(call_frame, width=380, height=200, corner_radius=10)
 scrollable_contacts_frame.pack(pady=10, padx=10)
-# call_frame.grid_rowconfigure(1, weight=1)
-# call_frame.grid_columnconfigure([0, 1, 2], weight=1)
 
 # Display nickname on hover label
 nickname_display_label = ctk.CTkLabel(call_frame, text="", height=20)
@@ -507,7 +570,7 @@ nickname_display_label.pack_forget()  # Initially, hide the label
 
 
 def show_nickname(event, nickname):
-    nickname_display_label.configure(text=f"Nickname: {nickname}")
+    nickname_display_label.configure(text=f"Alias: {nickname}")
     nickname_display_label.pack(side='bottom', fill='x', padx=10, pady=5)
 
 def hide_nickname(event):
@@ -518,98 +581,8 @@ def copy_to_clipboard(username):
     pyperclip.copy(username)
     print(f"Copied to clipboard: {username}")
 
-# # Initially populate the scrollable frame with all contacts
-# update_contacts_display()
-
-# test_button2 = ctk.CTkButton(call_frame, text="Receive Call", command=receive_call)
-# test_button2.pack(pady=20)
-
-def comboboxin_callback(choice):
-    # Assuming `shared.py` has been imported as `shared`
-    if choice in input_device_name_to_info_mapping:
-        shared.input_device = input_device_name_to_info_mapping[choice]
-        print(f"Device selected: {shared.input_device}")
-    else:
-        print("Selected device not found in mapping.")
-
-def comboboxout_callback(choice):
-    # Assuming `shared.py` has been imported as `shared`
-    if choice in output_device_name_to_info_mapping:
-        shared.output_device = output_device_name_to_info_mapping[choice]
-        print(f"Device selected: {shared.output_device}")
-    else:
-        print("Selected device not found in mapping.")
-
-comboboxin = ctk.CTkOptionMenu(settings_frame, values=[], command=comboboxin_callback, width=200)
-# combobox.grid(row=0, column=0, padx=20, pady=10)
-
-comboboxin.set("Select Input")  # set initial value
-comboboxin.pack(pady=10)
-
-comboboxout = ctk.CTkOptionMenu(settings_frame, values=[], command=comboboxout_callback, width=200)
-# combobox.grid(row=0, column=0, padx=20, pady=10)
-
-comboboxout.set("Select Output")  # set initial value
-comboboxout.pack(pady=10)
-
-# Initialize Start Recording Button but don't pack it initially
-start_recording_button = ctk.CTkButton(call_frame, text="Start Recording", command=start_recording)
-
-def update_input_devices_combobox():
-    global comboboxin, device_name_to_info_mapping
-    input_devices = get_user_input()
-    device_names = [device['name'] for device in input_devices]  # Extract device names
-    update_input_device_name_to_info_mapping(input_devices)  # Update the mapping
-
-    # Destroy the existing combobox (if it exists)
-    if 'comboboxin' in globals():
-        comboboxin.destroy()
-
-    # Recreate the combobox with the new values
-    comboboxin = ctk.CTkOptionMenu(settings_frame, values=device_names, height=40, width=200, command=comboboxin_callback)
-    input_label = ctk.CTkLabel(settings_frame, text="User Input:", font=("Arial", 17))
-    input_label.pack(pady=(30,20) , padx=20)
-    comboboxin.pack(pady=10)
-    comboboxin.set(device_names[0])  # Optionally set a default value
-
-
-
-def update_output_devices_combobox():
-    global comboboxout, output_device_name_to_info_mapping
-    output_devices = get_user_output()
-    device_names = [device['name'] for device in output_devices]  # Extract device names
-    update_output_device_name_to_info_mapping(output_devices)  # Update the mapping
-
-    # Destroy the existing combobox (if it exists)
-    if 'comboboxout' in globals():
-        comboboxout.destroy()
-
-    # Recreate the combobox with the new values
-    comboboxout = ctk.CTkOptionMenu(settings_frame, values=device_names, height=40, width=200, command=comboboxout_callback)
-    output_label = ctk.CTkLabel(settings_frame, text="User Output:", font=("Arial", 17))
-    output_label.pack(pady=(30,20) , padx=20)
-    comboboxout.pack(pady=10)
-    comboboxout.set(device_names[0])  # Optionally set a default value
-    # Back button in settings frame to return to main frame
-    back_button_settings = ctk.CTkButton(settings_frame, text="Back to Main", command=lambda: raise_frame(main_frame))
-    back_button_settings.pack(pady=20)
-
-
-def update_input_device_name_to_info_mapping(devices):
-    global input_device_name_to_info_mapping
-    for device in devices:
-        input_device_name_to_info_mapping[device['name']] = device
-
-def update_output_device_name_to_info_mapping(devices):
-    global output_device_name_to_info_mapping
-    for device in devices:
-        output_device_name_to_info_mapping[device['name']] = device
-
-
 back_button_call = ctk.CTkButton(call_frame, text="Back to Main", command=lambda: raise_frame(main_frame))
 back_button_call.pack(pady=20, padx=20)
-
-
 
 # Logs Frame Content - Placeholder content for now
 logs_label = ctk.CTkLabel(logs_frame, text="Call Logs", font=(clock_font_family, 35))
