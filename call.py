@@ -12,10 +12,6 @@ from vocoder import Vocoder
 import numpy as np
 import database as db
 import utilities
-import shared
-from shared import is_muted
-
-
 
 DEBUG = 0
 # CONSTANTS FOR PyAudio
@@ -26,6 +22,9 @@ CHUNK_SIZE_SEND = 512
 CHUNK_SIZE_TALK = 256
 CHANNELS = 1
 BUFFER_SIZE = 5
+
+#definitly need to hide this somehow
+key = (b'\x00' * 30)
 
 def get_user_devices(audio):
     num_devices = audio.get_device_count()
@@ -143,24 +142,24 @@ def incoming_buffer(buffer, rtp, seq_number, time_delta = 0):
         buffer[seq_number] = rtp
         return None
 
-def talk(udp_socket, record_stream, callee_username, destination_ip, destination_port):
+def talk(udp_socket, record_stream, callee_username, destination_ip, destination_port, user, call_session):
     ssrc = 5678
     payload_type = 0
     voc = Vocoder(create_random_seed=False, rate=RATE, chunk=CHUNK_SIZE_TALK, distortion=0.10)
 
     # Protect RTP
-    tx_policy = Policy(key=shared.key, ssrc_type=Policy.SSRC_ANY_OUTBOUND)
+    tx_policy = Policy(key=key, ssrc_type=Policy.SSRC_ANY_OUTBOUND)
     tx_session = Session(policy=tx_policy)
     sequence_number = 0
     print("Sending audio to " + destination_ip)
     try:
-        while not shared.call_end.is_set():
+        while not call_session.call_end.is_set():
             current_time_ms = int(time.time() * 1000) % (1 << 32)
             rtp_header = utilities.create_rtp_header(sequence_number, current_time_ms, ssrc, payload_type)
             raw_data = record_stream.read(CHUNK_SIZE_TALK, exception_on_overflow=False)
             in_data = np.frombuffer(raw_data, dtype=np.float32)
 
-            if not shared.obfuscation_on.is_set():
+            if not user.obfuscation_on.is_set():
                 in_data = voc.audio_effects(in_data)
             pcm_data = voc.float2pcm(in_data)
             data = pcm_data.tobytes('C')
@@ -168,7 +167,7 @@ def talk(udp_socket, record_stream, callee_username, destination_ip, destination
             packet = rtp_header + data
 
             # Check if microphone is muted
-            if not shared.is_muted:
+            if not user.is_muted:
                 srtp = tx_session.protect(packet)
                 udp_socket.sendto(srtp, (destination_ip, destination_port))
             else:
@@ -192,15 +191,15 @@ def talk(udp_socket, record_stream, callee_username, destination_ip, destination
     print("Talk Ending")
 
 
-def listen(udp_socket, listen_stream, hang_up_button):
+def listen(udp_socket, listen_stream, hang_up_button, call_session):
     packet_buffer = {}
-    rx_policy = Policy(key=shared.key, ssrc_type=Policy.SSRC_ANY_INBOUND)
+    rx_policy = Policy(key=key, ssrc_type=Policy.SSRC_ANY_INBOUND)
     rx_session = Session(policy=rx_policy)
     previous_time = 0
     prev_play_time = 0
 
     try: 
-        while not shared.call_end.is_set():
+        while not call_session.call_end.is_set():
             try:
                 data, sender_address = udp_socket.recvfrom(1046)
 
@@ -214,7 +213,7 @@ def listen(udp_socket, listen_stream, hang_up_button):
                 rtp_header = utilities.parse_rtp_header(rtp)
                 if rtp_header["payload_type"] == 2:
                     print("Callee Hung Up")
-                    shared.call_end.set()
+                    call_session.call_end.set()
                     hang_up_button.invoke()
                     return
                 if rtp_header["payload_type"] == 1:
@@ -238,7 +237,7 @@ def listen(udp_socket, listen_stream, hang_up_button):
 
                 previous_time = to_play_header["timestamp"]
 
-                if shared.call_end.is_set():
+                if call_session.call_end.is_set():
                     print("listen ending")
 
 
