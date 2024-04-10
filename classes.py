@@ -2,11 +2,16 @@ import time
 import threading
 import socket
 from threading import Event
+from pylibsrtp import Policy, Session
+import json
+from queue import Queue
 
 class CallSession:
     def __init__(self, caller, callee, on_mute_callback=None, on_unmute_callback=None, on_end_call=None):
         self.caller = caller
         self.callee = callee
+        self.destination_ip = ''
+        self.destination_port = ''
         self.is_muted = False
         self.start_time = time.time()
         self.duration = 0
@@ -14,10 +19,24 @@ class CallSession:
         self.transcription_thread = None
         self.stop_transcription_event = Event()
         self.call_end = Event()
+        self.audio_data = Queue()
         # Callbacks
         self.on_mute_callback = on_mute_callback
         self.on_unmute_callback = on_unmute_callback
         self.on_end_call = on_end_call
+        self.key =(b'\x00' * 30)
+        self.tx_policy = Policy(key=self.key, ssrc_type=Policy.SSRC_ANY_OUTBOUND)
+        self.tx_session = Session(policy=self.tx_policy)
+        self.ssrc = 5678
+        self.sequence_number = 0
+
+
+    def init_deepgram(self, dg_connection):
+        self.dg_connection = dg_connection
+        
+    def get_sequence_number(self):
+        self.sequence_number +=1
+        return self.sequence_number
 
     def mute(self):
         self.is_muted = True
@@ -45,6 +64,10 @@ class CallSession:
         self.transcription_thread = threading.Thread(target=self.transcribe)
         self.transcription_thread.start()
 
+    def parse_transcription_message(self, data):
+        message = json.loads(data.decode())
+        print(message)
+
     def transcribe(self):
         while not self.stop_transcription_event.is_set():
             # Add transcription logic here
@@ -61,7 +84,7 @@ class User:
         self.in_call = Event()
         self.current_call = None
         self.transcription_language = 'English'
-        self.spoken_language = 'English'
+        self.spoken_language = 'en-US'
         self.stop_transcription = Event()
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
