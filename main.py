@@ -315,16 +315,16 @@ settings_label.pack(pady=20)
 def comboboxin_callback(choice):
     # Assuming `shared.py` has been imported as `shared`
     if choice in input_device_name_to_info_mapping:
-        shared.input_device = input_device_name_to_info_mapping[choice]
-        print(f"Device selected: {shared.input_device}")
+        user.input_device = input_device_name_to_info_mapping[choice]
+        print(f"Device selected: {user.input_device}")
     else:
         print("Selected device not found in mapping.")
 
 def comboboxout_callback(choice):
     # Assuming `shared.py` has been imported as `shared`
     if choice in output_device_name_to_info_mapping:
-        shared.output_device = output_device_name_to_info_mapping[choice]
-        print(f"Device selected: {shared.output_device}")
+        user.output_device = output_device_name_to_info_mapping[choice]
+        print(f"Device selected: {user.output_device}")
     else:
         print("Selected device not found in mapping.")
 
@@ -567,7 +567,7 @@ def handle_add_contact():
     nickname = new_nickname_entry.get().strip()
     if username and nickname:
         # Add the new contact to the database
-        database.add_contact(shared.current_user, username, nickname)
+        database.add_contact(user.username, username, nickname)
         
         # Refresh the contacts display
         update_contacts_display()
@@ -650,7 +650,7 @@ def update_contacts_display(filtered_contacts=None):
 
     # Fetch contacts from the database
     if filtered_contacts is None:
-        filtered_contacts = database.get_contacts(shared.current_user)
+        filtered_contacts = database.get_contacts(user.username)
 
     for contact in filtered_contacts:
         display_name = contact.get("username")  # Adjust field names based on your database schema
