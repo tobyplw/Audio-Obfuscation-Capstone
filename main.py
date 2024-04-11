@@ -1,5 +1,3 @@
-# Author: Shafin Alam
-
 # Imports for front-end
 import customtkinter as ctk
 import tkinter as tk
@@ -222,7 +220,6 @@ def update_clock():
     clock_label.configure(text=current_time)  # Use 'configure' instead of 'config'
     clock_label.after(1000, update_clock)  # Schedule the update_clock function to be called after 1000ms (1 second)
 
-
 # Function to raise a frame to the top (make it visible)
 def raise_frame(frame):
     frame.tkraise()
@@ -250,9 +247,11 @@ for frame in (log_in_frame, sign_up_frame, main_frame, call_frame, logs_frame, t
 # Define clock font settings with the correct parameters for customtkinter
 clock_font_family = "Helvetica"  # Font family
 clock_font_size = 120  # Font size
-# clock_font_weight = "bold"  # Font weight
 
-# Main Frame Content - Adjust layout for clock and buttons
+
+
+# Main Frame Content
+
 main_frame_content = ctk.CTkFrame(main_frame, fg_color='transparent')
 main_frame_content.pack(pady=20, padx=20, expand=True)
 
@@ -653,7 +652,7 @@ logs_label.pack(pady=20, padx=20)
 back_button_logs = ctk.CTkButton(logs_frame, text="Back to Main", command=lambda: raise_frame(main_frame))
 back_button_logs.pack(pady=20, padx=20)
 
-# Modify the Logs Frame Content to include the sample logs table
+# Modify the Logs Frame to include the sample logs table
 
 #Set this up to be window so that its not hardcoded
 def setup_logs_frame(username):
@@ -829,10 +828,12 @@ password_entry.pack(in_=login_boxes_frame, pady=(20,30))
 sign_in_button.pack(in_=login_boxes_frame)
 sign_up_button.pack(in_=login_boxes_frame, pady=(30, 0))
 
-# Setting up the sign_up_frame
+
+
+# Sign Up Frame Content
+
 sign_up_frame_content = ctk.CTkFrame(sign_up_frame, fg_color='transparent')
 sign_up_frame_content.pack(pady=20, padx=20, expand=True)
-
 
 # Username Entry (Reused from login)
 username_label_signup = ctk.CTkLabel(sign_up_frame_content, text="Username:")
