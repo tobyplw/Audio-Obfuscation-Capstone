@@ -277,8 +277,6 @@ button_frame.pack(expand=True)
 
 def on_start_call_button_clicked():
     raise_frame(call_frame)  # Show the call frame
-    # update_input_devices_combobox()  # Update the devices combobox
-    # update_output_devices_combobox()
 
 
 start_call_button = ctk.CTkButton(button_frame, text="Start Call", command=on_start_call_button_clicked, width=200, height=40)
@@ -355,10 +353,27 @@ def update_input_devices_combobox():
 
     # Recreate the combobox with the new values
     comboboxin = ctk.CTkOptionMenu(settings_frame, values=device_names, height=40, width=200, command=comboboxin_callback)
-    input_label = ctk.CTkLabel(settings_frame, text="User Input:", font=("Arial", 17))
-    input_label.pack(pady=(30,20) , padx=20)
+    output_label = ctk.CTkLabel(settings_frame, text="User Devices:", font=("Arial", 17))
+    output_label.pack(pady=(30,20) , padx=20)
     comboboxin.pack(pady=10)
     comboboxin.set(device_names[0])  # Optionally set a default value
+
+# def update_input_devices_combobox():
+#     global comboboxin, device_name_to_info_mapping
+#     input_devices = get_user_input()
+#     device_names = [device['name'] for device in input_devices]  # Extract device names
+#     update_input_device_name_to_info_mapping(input_devices)  # Update the mapping
+
+#     # Destroy the existing combobox (if it exists)
+#     if 'comboboxin' in globals():
+#         comboboxin.destroy()
+
+#     # Recreate the combobox with the new values
+#     comboboxin = ctk.CTkOptionMenu(settings_frame, values=device_names, height=40, width=200, command=comboboxin_callback)
+#     # input_label = ctk.CTkLabel(settings_frame, text="User Input:", font=("Arial", 17))
+#     # input_label.pack(pady=(30,20) , padx=20)
+#     comboboxin.pack(pady=10)
+#     comboboxin.set(device_names[0])  # Optionally set a default value
 
 
 
@@ -374,8 +389,6 @@ def update_output_devices_combobox():
 
     # Recreate the combobox with the new values
     comboboxout = ctk.CTkOptionMenu(settings_frame, values=device_names, height=40, width=200, command=comboboxout_callback)
-    output_label = ctk.CTkLabel(settings_frame, text="User Output:", font=("Arial", 17))
-    output_label.pack(pady=(30,20) , padx=20)
     comboboxout.pack(pady=10)
     comboboxout.set(device_names[0])  # Optionally set a default value
     # Back button in settings frame to return to main frame
@@ -611,7 +624,7 @@ def transcription_language_callback(choice):
     print(f"Transcription language selected: {choice}")
 
 # Create the button
-combobox_translation = ctk.CTkOptionMenu(call_frame, values=list(LANGUAGES.keys()), command=transcription_language_callback, width=200)
+combobox_translation = ctk.CTkOptionMenu(settings_frame, values=list(LANGUAGES.keys()), command=transcription_language_callback, width=200)
 combobox_translation.set("Select Transcription Language")
 combobox_translation.pack(pady=10)
 
@@ -621,27 +634,29 @@ def spoken_language_callback(choice):
     print(f"Spoken language selected: {choice}")
 
 # Create the button
-combobox_translation = ctk.CTkOptionMenu(call_frame, values=list(LANGUAGES.keys()), command=spoken_language_callback, width=200)
+combobox_translation = ctk.CTkOptionMenu(settings_frame, values=list(LANGUAGES.keys()), command=spoken_language_callback, width=200)
 combobox_translation.set("Select Spoken Language")
 combobox_translation.pack(pady=10)
 
 # Initialize Start Recording Button but don't pack it initially
 start_recording_button = ctk.CTkButton(call_frame, text="Start Recording", command=start_recording)
 
-def update_input_devices_combobox():
-    global comboboxin, device_name_to_info_mapping
-    input_devices = get_user_input()
-    device_names = [device['name'] for device in input_devices]  # Extract device names
-    update_input_device_name_to_info_mapping(input_devices)  # Update the mapping
+# def update_input_devices_combobox():
+#     global comboboxin, device_name_to_info_mapping
+#     input_devices = get_user_input()
+#     device_names = [device['name'] for device in input_devices]  # Extract device names
+#     update_input_device_name_to_info_mapping(input_devices)  # Update the mapping
 
-    # Destroy the existing combobox (if it exists)
-    if 'comboboxin' in globals():
-        comboboxin.destroy()
+#     # Destroy the existing combobox (if it exists)
+#     if 'comboboxin' in globals():
+#         comboboxin.destroy()
 
-    # Recreate the combobox with the new values
-    comboboxin = ctk.CTkOptionMenu(call_frame, values=device_names, height=40, width=200, command=comboboxin_callback)
-    comboboxin.pack(pady=10)
-    comboboxin.set("Select Input")  # Optionally set a default value
+#     # Recreate the combobox with the new values
+#     comboboxin = ctk.CTkOptionMenu(settings_frame, values=device_names, height=40, width=200, command=comboboxin_callback)
+#     output_label = ctk.CTkLabel(settings_frame, text="User Devices:", font=("Arial", 17))
+#     output_label.pack(pady=(30,20) , padx=20)
+#     comboboxin.pack(pady=10)
+#     comboboxin.set("Select Input")  # Optionally set a default value
 
 
 def update_contacts_display(filtered_contacts=None):
@@ -725,7 +740,7 @@ def setup_logs_frame(username):
     logs_table.heading("call_transcript", text="Call Recording", anchor=tk.W)
 
     #CHANGE THE USERNAME HERE
-    print("current user is " +  username)
+    print("Current user is " +  username + ".")
     for log in database.get_calls(username):
         logs_table.insert(parent='', index='end', iid=log[0], text="", values=log)
 

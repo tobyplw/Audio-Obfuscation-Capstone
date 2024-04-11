@@ -162,6 +162,6 @@ def add_contact(username, contact_username, contact_nickname):
 def get_contacts(username):
     user = Users.find_one({"username": username})
     if user and "contacts" in user:
-        print("User contacts fetched")
+        print("User contacts fetched.")
         return user["contacts"]
     return []
