@@ -16,6 +16,7 @@ import shared
 from shared import is_muted
 
 
+
 DEBUG = 0
 # CONSTANTS FOR PyAudio
 FORMAT_TALK = pyaudio.paFloat32
@@ -277,3 +278,12 @@ def start_audio_stream(user_input_device, user_output_device, audio):
                 output_device_index=user_output_device["index"])
     
     return record_stream, listen_stream
+
+
+
+
+
+
+
+
+

@@ -48,7 +48,6 @@ class CallSession:
             # Update self.transcription as transcription progresses
             pass
 
-# Add languages
 class User:
     def __init__(self, username, input_device=None, output_device=None):
         self.username = username

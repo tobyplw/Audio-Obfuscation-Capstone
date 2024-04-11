@@ -6,7 +6,6 @@
 -   certifi 
 -   customtkinter 
 -   bcrypt
--   googletrans
 
 Run the following to install all dependancies:
 ```bash

@@ -26,16 +26,6 @@ import shared
 import call
 import utilities
 
-# Translator Dependencies
-import googletrans
-from googletrans import Translator
-
-# Initialize translator
-translator = Translator()
-
-# List of available languages
-LANGUAGES_LIST = list(googletrans.LANGUAGES.values())
-
 global last_words
 last_words = ""
 global input_device_name_to_info_mapping
@@ -546,63 +536,6 @@ def handle_add_contact():
         new_nickname_entry.delete(0, 'end')
     else:
         messagebox.showwarning("Missing Information", "Please enter BOTH a username and an alias.")
-        print("Selected device not found in mapping.")
-
-comboboxin = ctk.CTkOptionMenu(call_frame, values=[], command=comboboxin_callback, width=200)
-# combobox.grid(row=0, column=0, padx=20, pady=10)
-comboboxin.set("Select Input")  # set initial value
-comboboxin.pack(pady=10)
-
-def comboboxout_callback(choice):
-    # Assuming `shared.py` has been imported as `shared`
-    if choice in output_device_name_to_info_mapping:
-        shared.output_device = output_device_name_to_info_mapping[choice]
-        print(f"Device selected: {shared.output_device}")
-    else:
-        print("Selected device not found in mapping.")
-
-comboboxout = ctk.CTkOptionMenu(call_frame, values=[], command=comboboxout_callback, width=200)
-# combobox.grid(row=0, column=0, padx=20, pady=10)
-comboboxout.set("Select Output")  # set initial value
-comboboxout.pack(pady=10)
-
-# Update transcription language dropdown
-def transcription_language_callback(choice):
-    shared.transcription_language = shared.languages[choice]
-    print(f"Transcription language selected: {choice}")
-
-# Create the button
-combobox_translation = ctk.CTkOptionMenu(call_frame, values=list(shared.languages.keys()), command=transcription_language_callback, width=200)
-combobox_translation.set("Select Transcription Language")
-combobox_translation.pack(pady=10)
-
-# Update spoken language dropdown
-def spoken_language_callback(choice):
-    shared.spoken_language = shared.languages[choice]
-    print(f"Spoken language selected: {choice}")
-
-# Create the button
-combobox_translation = ctk.CTkOptionMenu(call_frame, values=list(shared.languages.keys()), command=spoken_language_callback, width=200)
-combobox_translation.set("Select Spoken Language")
-combobox_translation.pack(pady=10)
-
-# Initialize Start Recording Button but don't pack it initially
-start_recording_button = ctk.CTkButton(call_frame, text="Start Recording", command=start_recording)
-
-def update_input_devices_combobox():
-    global comboboxin, device_name_to_info_mapping
-    input_devices = get_user_input()
-    device_names = [device['name'] for device in input_devices]  # Extract device names
-    update_input_device_name_to_info_mapping(input_devices)  # Update the mapping
-
-    # Destroy the existing combobox (if it exists)
-    if 'comboboxin' in globals():
-        comboboxin.destroy()
-
-    # Recreate the combobox with the new values
-    comboboxin = ctk.CTkOptionMenu(call_frame, values=device_names, height=40, width=200, command=comboboxin_callback)
-    comboboxin.pack(pady=10)
-    comboboxin.set("Select Input")  # Optionally set a default value
 
 
 def update_contacts_display(filtered_contacts=None):
@@ -738,11 +671,9 @@ def update_transcribe_textbox(text):
     # global last_words
     # result = utilities.subtract_strings(text, last_words)
     # last_words = text
-    translation = translator.translate(text, src=shared.spoken_language, dest=shared.transcription_language)
     def callback():
         transcribe_textbox.configure(state="normal")
-        transcribe_textbox.insert(tk.END, translation.text)
-        transcribe_textbox.insert(tk.END, "\n")
+        transcribe_textbox.insert(tk.END,text)
         transcribe_textbox.configure(state="disabled")
     app.after(0, callback)
 
@@ -781,7 +712,7 @@ back_button_transcribe.pack(pady=20, padx=20)
 
 
 # Setting up the log_in_frame
-log_in_frame_content = ctk.CTkFrame(log_in_frame, fg_color='transparent')
+log_in_frame_content = ctk.CTkFrame(log_in_frame,fg_color='transparent')
 log_in_frame_content.pack(pady=20, padx=20, expand=True)
 
 welcome = ctk.CTkLabel(log_in_frame_content, text="Login To Your Account\n", font=('Helvetica', 36), fg_color='transparent')
