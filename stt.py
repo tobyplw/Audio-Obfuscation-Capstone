@@ -1,6 +1,7 @@
-from dotenv import load_dotenv
 import logging, verboselogs
 from time import sleep
+from shared import stop_transcription_event
+from tts import synthesize_text
 
 from deepgram import (
     DeepgramClient,
@@ -10,8 +11,6 @@ from deepgram import (
     Microphone,
 )
 
-
-load_dotenv()
 
 def start_speech_to_text_transcription(update_textbox_callback, stop_event):
     try:
@@ -26,6 +25,7 @@ def start_speech_to_text_transcription(update_textbox_callback, stop_event):
             sentence = result.channel.alternatives[0].transcript
             if len(sentence) > 0:
                 update_textbox_callback(f"Speaker: {sentence}\n")
+                synthesize_text(sentence)
 
         def on_error(self, error, **kwargs):
             print(f"\n\n{error}\n\n")
