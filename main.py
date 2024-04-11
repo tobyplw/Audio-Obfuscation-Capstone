@@ -306,8 +306,16 @@ sign_out_button.pack(pady=(10, 20), padx=20, anchor='e')
 
 
 # Settings Frame Content
-settings_label = ctk.CTkLabel(settings_frame, text="Settings", font=("Helvetica", 24))
+settings_label = ctk.CTkLabel(settings_frame, text="Settings", font=(clock_font_family, 35))
 settings_label.pack(pady=20)
+
+def comboboxin_callback(choice):
+    # Assuming `shared.py` has been imported as `shared`
+    if choice in input_device_name_to_info_mapping:
+        user.input_device = input_device_name_to_info_mapping[choice]
+        print(f"Device selected: {user.input_device}")
+    else:
+        print("Selected device not found in mapping.")
 
 def comboboxin_callback(choice):
     # Assuming `shared.py` has been imported as `shared`
@@ -578,21 +586,6 @@ def handle_add_contact():
         new_nickname_entry.delete(0, 'end')
     else:
         messagebox.showwarning("Missing Information", "Please enter BOTH a username and an alias.")
-def comboboxin_callback(choice):
-    # Assuming `shared.py` has been imported as `shared`
-    if choice in input_device_name_to_info_mapping:
-        user.input_device = input_device_name_to_info_mapping[choice]
-        print(f"Device selected: {user.input_device}")
-    else:
-        print("Selected device not found in mapping.")
-
-def comboboxout_callback(choice):
-    # Assuming `shared.py` has been imported as `shared`
-    if choice in output_device_name_to_info_mapping:
-        user.output_device  = output_device_name_to_info_mapping[choice]
-        print(f"Device selected: {user.output_device} ")
-    else:
-        print("Selected device not found in mapping.")
 
 # Initialize Start Recording Button but don't pack it initially
 start_recording_button = ctk.CTkButton(call_frame, text="Start Recording", command=start_recording)
