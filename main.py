@@ -333,7 +333,7 @@ def transcription_language_callback(choice):
 
 # Create the button
 combobox_translation = ctk.CTkOptionMenu(settings_frame, values=list(LANGUAGES.keys()), command=transcription_language_callback, width=200)
-combobox_translation.set("Select Transcription Language")
+combobox_translation.set("English")
 combobox_translation.pack(pady=10)
 
 # Update spoken language dropdown
@@ -343,7 +343,7 @@ def spoken_language_callback(choice):
 
 # Create the button
 combobox_spoken = ctk.CTkOptionMenu(settings_frame, values=list(LANGUAGES.keys()), command=spoken_language_callback, width=200)
-combobox_spoken.set("Select Spoken Language")
+combobox_spoken.set("English")
 combobox_spoken.pack(pady=10)
 
 # Initialize Start Recording Button but don't pack it initially
