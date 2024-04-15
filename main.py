@@ -434,6 +434,12 @@ def open_call_window(username):
             user.obfuscation_on.clear()
         else:
             user.obfuscation_on.set()
+    
+    def tts_toggle():
+        if user.tts_on.is_set():
+            user.tts_on.clear()
+        else:
+            user.tts_on.set()
 
     call_window = Toplevel(app)
     call_window.title("Call")
