@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 import logging, verboselogs
 from time import sleep
 from call import send_transcription_message, talk
+import queue
 
 
 from deepgram import (
@@ -52,7 +53,7 @@ def start_speech_to_text_transcription(transcription_on, user, call_session):
             parsed_message = parse_message(result)
             sentence = result.channel.alternatives[0].transcript
 
-            if len(sentence) > 0:
+            if len(sentence) > 0 and not user.is_muted:
                 # print(parsed_message)
                 send_transcription_message(call_session, user, parsed_message)
                 #update_textbox_callback(f"Speaker: {sentence}\n")
@@ -91,10 +92,15 @@ def start_speech_to_text_transcription(transcription_on, user, call_session):
         
 
         # Use a loop to periodically check the stop condition
-        while (True):
+        while not call_session.call_end.is_set():
             if not call_session.audio_data.empty():
                 # print(scaled_data)
-                dg_connection.send(call_session.audio_data.get())
+                try:
+                    data = call_session.audio_data.get(timeout = 5.0)
+                    if data:
+                        dg_connection.send(data)
+                except queue.Empty:
+                    continue  # Continue waiting if the queue is empty
                 # print(call_session.audio_data.qsize())
             # sleep(0.1)  # Wait briefly before checking again to reduce CPU usage
 

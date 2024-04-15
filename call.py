@@ -188,14 +188,13 @@ def talk(record_stream, callee_username, user, call_session):
 
             audio_np_int16 = (in_data * 32767).astype(np.int16)
 
-            call_session.audio_data.put(audio_np_int16.tobytes())
+            if not user.is_muted:
+                call_session.audio_data.put(audio_np_int16.tobytes())
             # print(call_session.audio_data.qsize())
             # print(call_session.audio_data)
-
-            packet = rtp_header + data
+                packet = rtp_header + data
 
             # Check if microphone is muted
-            if not user.is_muted:
                 srtp = call_session.tx_session.protect(packet)
                 user.client_socket.sendto(srtp, (call_session.destination_ip, call_session.destination_port))
             else:
@@ -213,7 +212,6 @@ def talk(record_stream, callee_username, user, call_session):
         packet = rtp_header + data
         srtp = call_session.tx_session.protect(packet)
         user.client_socket.sendto(srtp, (call_session.destination_ip, call_session.destination_port))
-        sequence_number+=1
         i+=1
     print("Talk Ending")
 
@@ -244,8 +242,8 @@ def listen(user, listen_stream, hang_up_button, call_session):
                     hang_up_button.invoke()
                     return
                 if rtp_header["payload_type"] == 1:
-                    print("RECIEVED TRANSCRIPTION")
-                    call_session.parse_transcription_message(rtp[12:], user)
+                    # print("RECIEVED TRANSCRIPTION")
+                    call_session.transcription_queue.put(rtp[12:])
                     continue
                 seq_num = rtp_header["sequence_number"]
                 to_play = incoming_buffer(packet_buffer, rtp, seq_num)

@@ -1,11 +1,17 @@
 import time
 import threading
+from threading import Thread
 import socket
 from threading import Event
 from pylibsrtp import Policy, Session
 import json
-from queue import Queue
+import queue
 import time
+from googletrans import Translator
+
+
+
+translator = Translator()
 
 class CallSession:
     def __init__(self, caller, callee, on_transcribe_callback=None, on_mute_callback=None, on_unmute_callback=None, on_end_call=None):
@@ -21,7 +27,8 @@ class CallSession:
         self.transcription_thread = None
         self.stop_transcription_event = Event()
         self.call_end = Event()
-        self.audio_data = Queue()
+        self.audio_data = queue.Queue()
+        self.transcription_queue = queue.Queue()
         # Callbacks
         self.update_transcription_textbox = on_transcribe_callback
         self.on_mute_callback = on_mute_callback
@@ -66,7 +73,7 @@ class CallSession:
         # Reset the stop event in case this is being reused
         self.stop_transcription_event.clear()
         # Initialize and start transcription thread
-        self.transcription_thread = threading.Thread(target=self.transcribe)
+        self.transcription_thread = threading.Thread(target=self.transcribe, daemon=True)
         self.transcription_thread.start()
 
     def parse_transcription_message(self, data, user):
@@ -76,26 +83,29 @@ class CallSession:
         id = message['id']
         is_final = message['is_final']
         text = message['text']
-        # if is_final:
-        #     self.add_to_log(text)
 
-        for key, value in text.items():
+
+        for key, words in text.items():
             id_speaker = str(id) + "." + str(key)
-            self.transcriptions[id_speaker] = value
-        
+            sentence = ""
+            for word in words:
+                sentence += " " + str(word)
+            if is_final:
+                translation = translator.translate(sentence, dest=user.transcription_language)
+                sentence = translation.text
+                
+            self.transcriptions[id_speaker] = sentence
+
+            if is_final:
+                self.add_to_log({key: sentence}, True)
+
         if (user.transcription_on.is_set()):
-            print(self.print_transcriptions())
             self.update_transcription_textbox(self.print_transcriptions())
 
 
-        #print(message)
-        #print("transcriptions below")
-        #print(self.transcriptions)
-        print(self.print_transcriptions())
 
-
-    def add_to_log(self, text, external):
-        for speaker, words in text.items():
+    def add_to_log(self, transcriptions, external):
+        for speaker, words in transcriptions.items():
             if external:
                 self.call_log += "[External Speaker" + str(speaker) + "]"
             else:
@@ -107,14 +117,35 @@ class CallSession:
 
     def print_transcriptions(self):
         to_print = ""
-        for id, words in self.transcriptions.items():
+        last_six_items = dict(list(self.transcriptions.items())[-6:])
+        for id, sentence in last_six_items.items():
             speaker = id.split(".")[1]
             to_print += "[Speaker " + str(speaker) + "]"
-            for word in words:
-                to_print+= " " + word
+            to_print+=sentence
             to_print+= "\n"
         
         return to_print
+
+
+
+    def start_transcription_listen_thread(self, user):
+            listen_thread = Thread(
+                target=self.transcription_listen_thread,
+                args=(user,),
+                daemon=True
+            )
+            listen_thread.start()
+    
+
+    def transcription_listen_thread(self, user):
+        while(not self.call_end.is_set()):
+            try:
+                message = self.transcription_queue.get(timeout = 10.0)
+                if message:
+                    self.parse_transcription_message(message, user)
+            except queue.Empty:
+                continue  # Continue waiting if the queue is empty
+            
     
 
 class User:

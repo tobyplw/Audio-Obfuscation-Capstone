@@ -165,8 +165,11 @@ def handle_call(destination_ip, destination_port, callee_username, user):
 
     listen_call_thread = threading.Thread(target=call.listen, args=(user, output_stream, hang_up_button, call_session),daemon=True)
 
-    transcription_thread = Thread(target=start_speech_to_text_transcription, args=(user.transcription_on, user, call_session),daemon=True)
-    transcription_thread.start()
+    transcription_send_thread = Thread(target=start_speech_to_text_transcription, args=(user.transcription_on, user, call_session),daemon=True)
+    transcription_send_thread.start()
+
+    call_session.start_transcription_listen_thread(user)
+
     
     start_call_thread.start()
     listen_call_thread.start()
@@ -355,12 +358,14 @@ def open_call_window(username, call_session):
     transcribe_textbox.configure(state= "disabled")
 
     def update_transcribe_textbox(text):
-        translation = translator.translate(text, src=user.spoken_language, dest=user.transcription_language)
+        #translation = translator.translate(text, src=user.spoken_language, dest=user.transcription_language)
         def callback():
             transcribe_textbox.configure(state="normal")
-            transcribe_textbox.insert(tk.END, translation.text + '\n')
+            transcribe_textbox.delete('1.0', 'end')
+            transcribe_textbox.insert(tk.END, text + '\n')
             transcribe_textbox.see(tk.END)
             transcribe_textbox.configure(state="disabled")
+            
         app.after(0, callback)
 
     call_session.update_transcription_textbox = update_transcribe_textbox
@@ -391,7 +396,7 @@ def open_call_window(username, call_session):
                                    corner_radius=40, 
                                    fg_color="red", 
                                    hover_color="#d3d3d3",
-                                   command=lambda: hang_up_call(call_window))
+                                   command=lambda: hang_up_call(call_window, call_session))
     # hang_up_button.image = hang_up_photo  # Keep a reference to avoid garbage collection
     # hang_up_button.pack(side="left", padx=10)
 
@@ -456,7 +461,7 @@ def mute_call():
     print('Mic has been muted.')
     pass
 
-def hang_up_call(window):
+def hang_up_call(window, call_session):
     global input_stream, output_stream, audio, start_call_thread, listen_call_thread
     call_session.call_end.set()
     #listen_call_thread.join()
