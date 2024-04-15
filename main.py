@@ -310,28 +310,18 @@ settings_label = ctk.CTkLabel(settings_frame, text="Settings", font=(clock_font_
 settings_label.pack(pady=20)
 
 def comboboxin_callback(choice):
-    # Assuming `shared.py` has been imported as `shared`
     if choice in input_device_name_to_info_mapping:
         user.input_device = input_device_name_to_info_mapping[choice]
-        print(f"Device selected: {user.input_device}")
-    else:
-        print("Selected device not found in mapping.")
-
-def comboboxin_callback(choice):
-    # Assuming `shared.py` has been imported as `shared`
-    if choice in input_device_name_to_info_mapping:
-        user.input_device = input_device_name_to_info_mapping[choice]
+        database.save_settings(user.username, choice, user.output_device)
         print(f"Device selected: {user.input_device}")
     else:
         print("Selected device not found in mapping.")
 
 def comboboxout_callback(choice):
-    # Assuming `shared.py` has been imported as `shared`
     if choice in output_device_name_to_info_mapping:
         user.output_device = output_device_name_to_info_mapping[choice]
+        database.save_settings(user.username, user.input_device, choice)
         print(f"Device selected: {user.output_device}")
-    else:
-        print("Selected device not found in mapping.")
 
 translation_label = ctk.CTkLabel(settings_frame, text="User Languages:", font=("Arial", 17))
 translation_label.pack(pady=(30,20) , padx=20)

@@ -107,19 +107,14 @@ def save_settings(username, input_device, output_device):
         {"username": username},
         {"$set": {"input_device": input_device, "output_device": output_device}}
     )
-    if update_result.modified_count > 0:
-        print(f"Settings updated for {username}")
-    else:
-        print("No changes made to the database.")
+    if update_result.modified_count == 0:
+        print(f"No changes made for {username}")
 
 def get_settings(username):
     user = Users.find_one({"username": username}, {'input_device': 1, 'output_device': 1})
     if user:
-        return user.get('input_device'), user.get('output_device')
+        return user.get('input_device', None), user.get('output_device', None)
     return None, None
-
-
-
 
 def add_contact(username, contact_username, contact_nickname):
     # Fetch the user's document to update
