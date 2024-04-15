@@ -16,6 +16,7 @@ myclient = MongoClient(uri, tlsCAFile=certifi.where())
 try:
     myclient.admin.command('ping')
     print("You successfully connected to MongoDB!")
+    
 except Exception as e:
     print(e)
 

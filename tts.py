@@ -2,7 +2,7 @@ import os
 import requests
 import pyaudio
 
-STREAM_AUDIO=False
+STREAM_AUDIO=True
 MODEL_NAME = f"aura-orion-en"
 CONTAINER= f"none"
 ENCODING = f"linear16"
@@ -23,7 +23,7 @@ payload = {
 stream = None
 p = None
 
-# set this to your desired output device
+# set this to to what ever output device is saved in our settings.
 output_device_index = 4
 
 def init_stream():

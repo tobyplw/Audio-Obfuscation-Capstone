@@ -294,6 +294,12 @@ def open_call_window(username):
         else:
             shared.obfuscation_on.set()
 
+    def tts_toggle():
+        if shared.tts_on.is_set():
+            shared.tts_on.clear()
+        else:
+            shared.tts_on.set()
+
     call_window = Toplevel(app)
     call_window.title("Call")
     call_window.geometry("1400x700")
@@ -374,10 +380,26 @@ def open_call_window(username):
                                 corner_radius=40, 
                                 fg_color="white", 
                                 command=mute_call)
+
+    tts_image = Image.open("assets/tts.png")
+
+    tts_photo = ctk.CTkImage(tts_image, size=(40,40))
+
+    tts_button = ctk.CTkButton(buttons_frame, 
+                                image=tts_photo, 
+                                text="", 
+                                height=40, 
+                                width=40, 
+                                corner_radius=40, 
+                                fg_color="white", 
+                                command=tts_toggle)
+    
     transcribe_button.pack(side="right", padx=25)
+    tts_button.pack(side="right", padx=25)
     obfuscate_button.pack(side="right", padx=25)
     mute_button.pack(side="left", padx=25)
     hang_up_button.pack(side="left", padx=25)
+
 
     # test_button = ctk.CTkButton(call_window, text="")
     # test_button.pack(side='bottom')
