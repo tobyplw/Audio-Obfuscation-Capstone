@@ -323,7 +323,7 @@ def comboboxout_callback(choice):
         database.save_settings(user.username, user.input_device, choice)
         print(f"Device selected: {user.output_device}")
 
-translation_label = ctk.CTkLabel(settings_frame, text="User Languages:", font=("Arial", 17))
+translation_label = ctk.CTkLabel(settings_frame, text="User Languages:", font=("Arial", 22))
 translation_label.pack(pady=(30,20) , padx=20)
 
 # Update transcription language dropdown
@@ -332,6 +332,8 @@ def transcription_language_callback(choice):
     print(f"Transcription language selected: {choice}")
 
 # Create the button
+translate_label = ctk.CTkLabel(settings_frame, text="Transcription Language:", font=("Arial", 15))
+translate_label.pack(padx=20)
 combobox_translation = ctk.CTkOptionMenu(settings_frame, values=list(LANGUAGES.keys()), command=transcription_language_callback, width=200)
 combobox_translation.set("English")
 combobox_translation.pack(pady=10)
@@ -342,6 +344,8 @@ def spoken_language_callback(choice):
     print(f"Spoken language selected: {choice}")
 
 # Create the button
+spoken_label = ctk.CTkLabel(settings_frame, text="Spoken Language:", font=("Arial", 15))
+spoken_label.pack(padx=20)
 combobox_spoken = ctk.CTkOptionMenu(settings_frame, values=list(LANGUAGES.keys()), command=spoken_language_callback, width=200)
 combobox_spoken.set("English")
 combobox_spoken.pack(pady=10)
@@ -361,7 +365,7 @@ def update_input_devices_combobox():
 
     # Recreate the combobox with the new values
     comboboxin = ctk.CTkOptionMenu(settings_frame, values=device_names, height=40, width=200, command=comboboxin_callback)
-    output_label = ctk.CTkLabel(settings_frame, text="User Devices:", font=("Arial", 17))
+    output_label = ctk.CTkLabel(settings_frame, text="User Devices:", font=("Arial", 22))
     output_label.pack(pady=(30,20) , padx=20)
     comboboxin.pack(pady=10)
     comboboxin.set(device_names[0])  # Optionally set a default value
