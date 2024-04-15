@@ -12,7 +12,7 @@ from deepgram import (
 )
 
 
-def start_speech_to_text_transcription(update_textbox_callback, stop_event):
+def start_speech_to_text_transcription(update_textbox_callback, stop_event, user):
     try:
         deepgram: DeepgramClient = DeepgramClient(api_key="5e31c0c3ca3a70e248b06ebc0917f9c8571f3d94")
 
@@ -41,7 +41,7 @@ def start_speech_to_text_transcription(update_textbox_callback, stop_event):
         options: LiveOptions = LiveOptions(
             model="nova-2",
             punctuate=True,
-            language="en-US",
+            language=user.spoken_language,
             encoding="linear16",
             channels=1,
             sample_rate=16000,
