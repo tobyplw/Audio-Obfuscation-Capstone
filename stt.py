@@ -53,13 +53,11 @@ def start_speech_to_text_transcription(update_textbox_callback, stop_event, user
             sentence = result.channel.alternatives[0].transcript
 
             if len(sentence) > 0:
-                print(parsed_message)
+                # print(parsed_message)
                 send_transcription_message(call_session, user, parsed_message)
                 #update_textbox_callback(f"Speaker: {sentence}\n")
                 #update_textbox_callback(f" {sentence}")
 
-
-        dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
 
         def on_error(self, error, **kwargs):
             print(f"\n\n{error}\n\n")
@@ -68,30 +66,19 @@ def start_speech_to_text_transcription(update_textbox_callback, stop_event, user
             print(f"\n\n{close}\n\n")
 
         dg_connection.on(LiveTranscriptionEvents.Open, on_open)
-        # dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
+        dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
         dg_connection.on(LiveTranscriptionEvents.Error, on_error)
         dg_connection.on(LiveTranscriptionEvents.Close, on_close)
 
         options: LiveOptions = LiveOptions(
             model="nova-2",
+            punctuate=True,
+            diarize=True,
             interim_results=True,
             language=user.spoken_language,
-            sample_rate=16000,
+            encoding="linear16",
             channels=1,
-
-            # This is how deepgram devs initialize (we get an error)
-            #: Exception in AsyncLiveClient._listening: 'speaker'
-            #: Exception in LiveClient._listening: 'speaker'
-            # model="nova-2",
-            # punctuate=True,
-            # language="en-US",
-            # encoding="linear16",
-            # channels=1,
-            # sample_rate=16000,
-            # # To get UtteranceEnd, the following must be set:
-            # interim_results=True,
-            # utterance_end_ms="1000",
-            # vad_events=True,
+            sample_rate=24000,
         )
         dg_connection.start(options)
 
@@ -104,7 +91,7 @@ def start_speech_to_text_transcription(update_textbox_callback, stop_event, user
         
 
         # Use a loop to periodically check the stop condition
-        while not stop_event.is_set():
+        while (True):
             if not call_session.audio_data.empty():
                 # print(scaled_data)
                 dg_connection.send(call_session.audio_data.get())

@@ -161,9 +161,9 @@ def handle_call(destination_ip,destination_port, callee_username, user):
 
     open_call_window(user.username)
     input_stream, output_stream = call.start_audio_stream(user.input_device, user.output_device, audio)
-    start_call_thread = threading.Thread(target=call.talk, args=(user.client_socket, input_stream,callee_username, user, call_session), daemon=True)
+    start_call_thread = threading.Thread(target=call.talk, args=(input_stream,callee_username, user, call_session), daemon=True)
 
-    listen_call_thread = threading.Thread(target=call.listen, args=(user.client_socket, output_stream, hang_up_button, call_session),daemon=True)
+    listen_call_thread = threading.Thread(target=call.listen, args=(user, output_stream, hang_up_button, call_session),daemon=True)
 
     transcription_thread = Thread(target=start_speech_to_text_transcription, args=(update_transcribe_textbox, user.stop_transcription, user, call_session),daemon=True)
     transcription_thread.start()
@@ -667,9 +667,9 @@ def start_transcription_thread():
     transcription_thread = Thread(target=start_speech_to_text_transcription, args=(update_transcribe_textbox, user.stop_transcription, user, call_session),daemon=True)
     transcription_thread.start()
 
-# def start_sending_transcriptions():
-#     transcription_thread = Thread(target=start_speech_to_text_transcription, args=(update_transcribe_textbox, user.stop_transcription, user, call_session),daemon=True)
-#     transcription_thread.start()
+def start_sending_transcriptions():
+    transcription_thread = Thread(target=start_speech_to_text_transcription, args=(update_transcribe_textbox, user.stop_transcription, user, call_session),daemon=True)
+    transcription_thread.start()
 
 def start_transcription():
     user.stop_transcription.clear()  # Ensure the stop event is clear at start

@@ -27,6 +27,8 @@ class CallSession:
         self.key =(b'\x00' * 30)
         self.tx_policy = Policy(key=self.key, ssrc_type=Policy.SSRC_ANY_OUTBOUND)
         self.tx_session = Session(policy=self.tx_policy)
+        self.rx_policy = Policy(key=self.key, ssrc_type=Policy.SSRC_ANY_INBOUND)
+        self.rx_session = Session(policy=self.rx_policy)
         self.ssrc = 5678
         self.sequence_number = 0
 
@@ -65,7 +67,9 @@ class CallSession:
         self.transcription_thread.start()
 
     def parse_transcription_message(self, data):
-        message = json.loads(data.decode())
+        #print(data)
+        decoded_data = data.decode('utf-8')
+        message = json.loads(decoded_data)
         print(message)
 
     def transcribe(self):
@@ -83,7 +87,7 @@ class User:
         self.obfuscation_on = Event()
         self.in_call = Event()
         self.current_call = None
-        self.transcription_language = 'English'
+        self.transcription_language = 'en'
         self.spoken_language = 'en-US'
         self.stop_transcription = Event()
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

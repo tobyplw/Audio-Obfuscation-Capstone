@@ -166,7 +166,7 @@ def talk_transcribe(record_stream, call_session):
     
     print("Talk Ending")
 
-def talk(udp_socket, record_stream, callee_username, user, call_session):
+def talk(record_stream, callee_username, user, call_session):
     
     payload_type = 0
     voc = Vocoder(create_random_seed=False, rate=RATE, chunk=CHUNK_SIZE_TALK, distortion=0.10)
@@ -179,15 +179,16 @@ def talk(udp_socket, record_stream, callee_username, user, call_session):
             rtp_header = utilities.create_rtp_header(call_session.get_sequence_number(), current_time_ms, call_session.ssrc, payload_type = 0)
             raw_data = record_stream.read(CHUNK_SIZE_TALK, exception_on_overflow=False)
             in_data = np.frombuffer(raw_data, dtype=np.float32)
+            
 
             if not user.obfuscation_on.is_set():
                 in_data = voc.audio_effects(in_data)
             pcm_data = voc.float2pcm(in_data)
             data = pcm_data.tobytes('C')
 
-            scaled_data = np.int16(in_data * 32767).tobytes('C')
+            audio_np_int16 = (in_data * 32767).astype(np.int16)
 
-            call_session.audio_data.put(data)
+            call_session.audio_data.put(audio_np_int16.tobytes())
             # print(call_session.audio_data.qsize())
             # print(call_session.audio_data)
 
@@ -196,42 +197,42 @@ def talk(udp_socket, record_stream, callee_username, user, call_session):
             # Check if microphone is muted
             if not user.is_muted:
                 srtp = call_session.tx_session.protect(packet)
-                udp_socket.sendto(srtp, (call_session.destination_ip, call_session.destination_port))
+                user.client_socket.sendto(srtp, (call_session.destination_ip, call_session.destination_port))
             else:
                 # If muted, you might want to do something (like sending silence or just skipping)
                 pass
 
     except KeyboardInterrupt:
-        udp_socket.close()
+        user.client_socket.close()
         record_stream.close()
     
     i = 0
     while i < 10:
-        rtp_header = utilities.create_rtp_header(call_session.get_sequence_number, current_time_ms, call_session.ssrc, payload_type = 2)
+        rtp_header = utilities.create_rtp_header(call_session.get_sequence_number(), current_time_ms, call_session.ssrc, payload_type = 2)
         data = bytes(1024)
         packet = rtp_header + data
         srtp = call_session.tx_session.protect(packet)
-        udp_socket.sendto(srtp, (call_session.destination_ip, call_session.destination_port))
+        user.client_socket.sendto(srtp, (call_session.destination_ip, call_session.destination_port))
         sequence_number+=1
         i+=1
     print("Talk Ending")
 
 
-def listen(udp_socket, listen_stream, hang_up_button, call_session):
+def listen(user, listen_stream, hang_up_button, call_session):
     packet_buffer = {}
-    rx_policy = Policy(key=key, ssrc_type=Policy.SSRC_ANY_INBOUND)
-    rx_session = Session(policy=rx_policy)
+    #rx_policy = Policy(key=key, ssrc_type=Policy.SSRC_ANY_INBOUND)
+    #rx_session = Session(policy=rx_policy)
     previous_time = 0
     prev_play_time = 0
 
     try: 
         while not call_session.call_end.is_set():
             try:
-                data, sender_address = udp_socket.recvfrom(1046)
+                data, sender_address = user.client_socket.recvfrom(1036)
 
                 # unprotect RTP
                 try:
-                    rtp = rx_session.unprotect(data)
+                    rtp = call_session.rx_session.unprotect(data)
                 except:
                     continue
                 
@@ -243,7 +244,9 @@ def listen(udp_socket, listen_stream, hang_up_button, call_session):
                     hang_up_button.invoke()
                     return
                 if rtp_header["payload_type"] == 1:
-                    call_session.parse_transcription_message(data[12:1036])
+                    print("RECIEVED TRANSCRIPTION")
+                    call_session.parse_transcription_message(rtp[12:])
+                    continue
                 seq_num = rtp_header["sequence_number"]
                 to_play = incoming_buffer(packet_buffer, rtp, seq_num)
                 #to_play = rtp
@@ -278,7 +281,7 @@ def listen(udp_socket, listen_stream, hang_up_button, call_session):
         
     except KeyboardInterrupt:
         # Close the socket and stream
-        udp_socket.close()
+        user.client_socket.close()
         listen_stream.close()
 
     print("listen ending")
@@ -286,11 +289,14 @@ def listen(udp_socket, listen_stream, hang_up_button, call_session):
 
 def send_transcription_message(call_session, user, message):
     current_time_ms = int(time.time() * 1000) % (1 << 32)
-    rtp_header = utilities.create_rtp_header(call_session.get_sequence_number, current_time_ms, call_session.ssrc, payload_type = 1)
-    data = json.dumps(message).encode()
-    packet = rtp_header + data
+    rtp_header = utilities.create_rtp_header(call_session.get_sequence_number(), current_time_ms, call_session.ssrc, payload_type = 1)
+    data = json.dumps(message)
+    encoded_data = data.encode('utf-8')
+    #print(str(encoded_data))
+    packet = rtp_header + encoded_data
     srtp = call_session.tx_session.protect(packet)
-    user.udp_socket.sendto(srtp, (call_session.destination_ip, call_session.destination_port))
+    
+    user.client_socket.sendto(srtp, (call_session.destination_ip, call_session.destination_port))
 
 
 
