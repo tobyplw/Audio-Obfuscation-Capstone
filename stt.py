@@ -55,6 +55,7 @@ def start_speech_to_text_transcription(update_textbox_callback, stop_event, user
             if len(sentence) > 0:
                 # print(parsed_message)
                 send_transcription_message(call_session, user, parsed_message)
+                call_session.add_to_log(parse_message['text'])
                 #update_textbox_callback(f"Speaker: {sentence}\n")
                 #update_textbox_callback(f" {sentence}")
 

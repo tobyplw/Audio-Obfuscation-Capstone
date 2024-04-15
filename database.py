@@ -61,10 +61,15 @@ def login(username, password):
         return False
 
 #Function to log a users call
-def log_call (caller, callee, call_date, call_duration, call_transcript):
+def log_call (caller, callee, call_duration, call_transcript):
+    # Get the current date and time
+    current_datetime = datetime.now()
+
+    # Format the current date and time
+    formatted_datetime = current_datetime.strftime("%m-%d-%Y %H:%M:%S")
     new_call = {"caller": caller, 
                 "callee": callee, 
-                "call_date": call_date, 
+                "call_date": formatted_datetime, 
                 "call_duration": call_duration, 
                 "call_transcript": call_transcript
                 }

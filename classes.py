@@ -5,6 +5,7 @@ from threading import Event
 from pylibsrtp import Policy, Session
 import json
 from queue import Queue
+import time
 
 class CallSession:
     def __init__(self, caller, callee, on_mute_callback=None, on_unmute_callback=None, on_end_call=None):
@@ -15,7 +16,8 @@ class CallSession:
         self.is_muted = False
         self.start_time = time.time()
         self.duration = 0
-        self.transcription = ""
+        self.transcriptions = {}
+        self.call_log = ""
         self.transcription_thread = None
         self.stop_transcription_event = Event()
         self.call_end = Event()
@@ -70,13 +72,45 @@ class CallSession:
         #print(data)
         decoded_data = data.decode('utf-8')
         message = json.loads(decoded_data)
-        print(message)
+        id = message['id']
+        is_final = message['is_final']
+        text = message['text']
+        if is_final:
+            self.add_to_log(text)
 
-    def transcribe(self):
-        while not self.stop_transcription_event.is_set():
-            # Add transcription logic here
-            # Update self.transcription as transcription progresses
-            pass
+        for key, value in text.items():
+            id_speaker = str(id) + "." + str(key)
+            self.transcriptions[id_speaker] = value
+
+
+        #print(message)
+        #print("transcriptions below")
+        #print(self.transcriptions)
+        print(self.print_transcriptions())
+
+
+    def add_to_log(self, text, external):
+        for speaker, words in text.items():
+            if external:
+                self.call_log += "[External Speaker" + str(speaker) + "]"
+            else:
+                self.call_log += "[Speaker" + str(speaker) + "]"
+            for word in words:
+                self.call_log += " " + word
+            self.call_log += "  {" + str(time.time()) + "}\n"
+
+
+    def print_transcriptions(self):
+        to_print = ""
+        for id, words in self.transcriptions.items():
+            speaker = id.split(".")[1]
+            to_print += "[Speaker " + str(speaker) + "]"
+            for word in words:
+                to_print+= " " + word
+            to_print+= "\n"
+        
+        return to_print
+    
 
 class User:
     def __init__(self, username):
