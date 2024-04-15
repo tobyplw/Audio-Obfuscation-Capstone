@@ -151,18 +151,22 @@ def handle_error_message(callee_username):
     # print("Try Again: Enter username you are trying to reach: ")
     pass
 
-def handle_call(destination_ip,destination_port, callee_username):
+def handle_call(destination_ip, destination_port, callee_username, user):
     global input_stream, output_stream, start_call_thread, listen_call_thread
+    call_session = CallSession('', '')
     call_session.caller = user.username
     call_session.callee = callee_username
-
+    call_session.destination_ip = destination_ip
+    call_session.destination_port = destination_port
     open_call_window(user.username)
     input_stream, output_stream = call.start_audio_stream(user.input_device, user.output_device, audio)
-    start_call_thread = threading.Thread(target=call.talk, args=(user.client_socket, input_stream,callee_username, destination_ip, destination_port, user, call_session), daemon=True)
-    listen_call_thread = threading.Thread(target=call.listen, args=(user.client_socket, output_stream, hang_up_button, call_session),daemon=True)
+    start_call_thread = threading.Thread(target=call.talk, args=(input_stream,callee_username, user, call_session), daemon=True)
+    listen_call_thread = threading.Thread(target=call.listen, args=(user, output_stream, hang_up_button, call_session),daemon=True)
+    transcription_thread = Thread(target=start_speech_to_text_transcription, args=(user.transcription_on, user, call_session),daemon=True)
+    transcription_thread.start()
     start_call_thread.start()
     listen_call_thread.start()
-
+    # start_sending_transcriptions()
 
 
 def incoming_call_request(callee_username):
