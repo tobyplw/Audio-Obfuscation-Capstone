@@ -1,29 +1,66 @@
 # Author: Shafin Alam
 
+# Imports for front-end
 import customtkinter as ctk
 import tkinter as tk
 from tkinter import messagebox, ttk, Toplevel  # Import messagebox for showing dialog messages
-# from tkinter import ttk  # Import ttk module for Treeview
-from datetime import datetime  # Import datetime to fetch the current time
 from PIL import Image # from tkinter import PhotoImage
+
+# Imports for time
+from datetime import datetime  # Import datetime to fetch the current time
+import time
+
+# Imports for main utilities
 import threading
 from threading import Thread
-
 import pyaudio
-import database
-import shared
-from shared import stop_transcription_event
-from stt import start_speech_to_text_transcription
-from call import get_user_input,get_user_output
-from shared import is_muted
-
 import socket
-import time
 import stun
 import json
-import shared
+from googletrans import Translator
+
+# Imports from other files
+import database
+from stt import start_speech_to_text_transcription
 import call
-import utilities
+from call import get_user_input,get_user_output
+from classes import User, CallSession, Server
+
+# Create user, server, and call session objects
+global user
+user = User('')
+global server
+server = Server()
+global call_session
+call_session = CallSession('', '')
+
+# Dictionary for available spoken and transcribed languages
+LANGUAGES = {
+    'Czech' : 'cs',
+    'Danish' : 'da',
+    'Dutch' : 'nl',
+    'English' : 'en',
+    'French' : 'fr',
+    'German' : 'de',
+    'Greek' : 'el',
+    'Hindi' : 'hi',
+    'Indonesian' : 'id',
+    'Italian' : 'it',
+    'Japanese' : 'ja',
+    'Korean' : 'ko',
+    'Malay' : 'ms',
+    'Norwegian' : 'no',
+    'Polish' : 'pl',
+    'Portuguese' : 'pt',
+    'Russian' : 'ru',
+    'Spanish' : 'es',
+    'Swedish' : 'sv',
+    'Turkish' : 'tr',
+    'Ukrainian' : 'uk',
+    'Vietnamese' : 'vi'
+}
+
+translator = Translator()
 
 global last_words
 last_words = ""
@@ -50,7 +87,7 @@ def check_NAT():
         pass
 
 def get_internal_address():
-    internal_ip, internal_port = shared.client_socket.getsockname()
+    internal_ip, internal_port = user.client_socket.getsockname()
     internal_ip = socket.gethostbyname(socket.gethostname()) #sometimes the first one gets the wrong internal ip or something
     return internal_ip, internal_port
 
@@ -62,25 +99,25 @@ def server_connection():
     while True:
         time.sleep(.5)
         curr_time = time.time()
-        if curr_time > poll_time + shared.Poll_Time:
+        if curr_time > poll_time + server.poll_time:
             poll_time = curr_time
-            message = {"Action" : "Poll", "From_Username" : shared.current_user, "Internal_IP" : internal_ip, "Internal_Port" : internal_port, "Time" : time.time()}
-            shared.client_socket.sendto(json.dumps(message).encode(), (shared.SERVER_HOST, shared.SERVER_PORT))
+            message = {"Action" : "Poll", "From_Username" : user.username, "Internal_IP" : internal_ip, "Internal_Port" : internal_port, "Time" : time.time()}
+            user.client_socket.sendto(json.dumps(message).encode(), (server.get_server_host(), server.get_server_port()))
 
 
 def send_call_message(user_input):
     print("Calling ", user_input)
-    message = {"Action" : "Calling","From_Username" : shared.current_user, "To_Username" : user_input, "Time" : time.time()}
-    shared.client_socket.sendto(json.dumps(message).encode(), (shared.SERVER_HOST, shared.SERVER_PORT))
+    message = {"Action" : "Calling","From_Username" : user.username, "To_Username" : user_input, "Time" : time.time()}
+    user.client_socket.sendto(json.dumps(message).encode(), (server.get_server_host(), server.get_server_port()))
 
 
 def recieve_messages():
     while True:
         time.sleep(0.1)
-        if not shared.in_call.is_set():
+        if not user.in_call.is_set():
             data = None
             try:
-                data, server_address = shared.client_socket.recvfrom(1024)
+                data, server_address = user.client_socket.recvfrom(1024)
             except BlockingIOError:
                 pass
             if data is not None:
@@ -99,8 +136,8 @@ def recieve_messages():
                         destination_ip = inc_message["Destination_IP"]
                         destination_port = inc_message["Destination_Port"]
                         callee_username = inc_message["From_Username"]
-                        handle_call(destination_ip,destination_port, callee_username)
-                        shared.in_call.set()
+                        handle_call(destination_ip, destination_port, callee_username, user)
+                        user.in_call.set()
                     elif action == "DECLINED":
                         callee_username = inc_message["To_Username"]
                         print(f"{callee_username} Declined Your Call")
@@ -114,14 +151,26 @@ def handle_error_message(callee_username):
     # print("Try Again: Enter username you are trying to reach: ")
     pass
 
-def handle_call(destination_ip,destination_port, callee_username):
+def handle_call(destination_ip, destination_port, callee_username, user):
     global input_stream, output_stream, start_call_thread, listen_call_thread
-    open_call_window(shared.current_user)
-    input_stream, output_stream = call.start_audio_stream(shared.input_device, shared.output_device,audio)
-    start_call_thread = threading.Thread(target=call.talk, args=(shared.client_socket, input_stream,callee_username, destination_ip, destination_port),daemon=True)
-    listen_call_thread = threading.Thread(target=call.listen, args=(shared.client_socket, output_stream, hang_up_button),daemon=True)
+    call_session = CallSession('', '')
+    call_session.caller = user.username
+    call_session.callee = callee_username
+    call_session.destination_ip = destination_ip
+    call_session.destination_port = destination_port
+
+    open_call_window(user.username, call_session)
+    input_stream, output_stream = call.start_audio_stream(user.input_device, user.output_device, audio)
+    start_call_thread = threading.Thread(target=call.talk, args=(input_stream,callee_username, user, call_session), daemon=True)
+
+    listen_call_thread = threading.Thread(target=call.listen, args=(user, output_stream, hang_up_button, call_session),daemon=True)
+
+    transcription_thread = Thread(target=start_speech_to_text_transcription, args=(user.transcription_on, user, call_session),daemon=True)
+    transcription_thread.start()
+    
     start_call_thread.start()
     listen_call_thread.start()
+    # start_sending_transcriptions()
 
 
 
@@ -135,20 +184,20 @@ def incoming_call_request(callee_username):
         # User accepted the call
         print("Call accepted.")
         # Here goes accepting call logic
-        message = {"Action" : "Accept", "From_Username" : shared.current_user, "To_Username" : callee_username,  "Time" : time.time()}
-        shared.client_socket.sendto(json.dumps(message).encode(), (shared.SERVER_HOST, shared.SERVER_PORT))
+        message = {"Action" : "Accept", "From_Username" : user.username, "To_Username" : callee_username,  "Time" : time.time()}
+        user.client_socket.sendto(json.dumps(message).encode(), (server.get_server_host(), server.get_server_port()))
         
     else:
         # User denied the call
         print("Call denied.")
         # Add logic for what happens when a call is denied
-        message = {"Action" : "Decline", "From_Username" : shared.current_user, "To_Username" : callee_username,  "Time" : time.time()}
-        shared.client_socket.sendto(json.dumps(message).encode(), (shared.SERVER_HOST, shared.SERVER_PORT))
+        message = {"Action" : "Decline", "From_Username" : user.username, "To_Username" : callee_username,  "Time" : time.time()}
+        user.client_socket.sendto(json.dumps(message).encode(), (server.get_server_host(), server.get_server_port()))
 
 
 def connect_with_server():
-    shared.client_socket.bind(('0.0.0.0', 0))
-    shared.client_socket.setblocking(0)
+    user.client_socket.bind(('0.0.0.0', 0))
+    user.client_socket.setblocking(0)
     server_polling_thread = threading.Thread(target=server_connection,daemon=True)
     server_responding_thread = threading.Thread(target=recieve_messages,daemon=True)
     server_polling_thread.start()
@@ -198,10 +247,9 @@ sign_up_frame = ctk.CTkFrame(app)
 main_frame = ctk.CTkFrame(app)
 call_frame = ctk.CTkFrame(app)
 logs_frame = ctk.CTkFrame(app)  # Frame for logs
-transcribe_frame = ctk.CTkFrame(app)
 
 
-for frame in (log_in_frame, sign_up_frame, main_frame, call_frame, logs_frame, transcribe_frame):
+for frame in (log_in_frame, sign_up_frame, main_frame, call_frame, logs_frame):
     frame.grid(row=0, column=0, sticky='nsew')
 
 # Define clock font settings with the correct parameters for customtkinter
@@ -244,9 +292,6 @@ start_call_button.pack(side='left', padx=10, pady=10, anchor='center')
 access_logs_button = ctk.CTkButton(button_frame, text="Access Logs", command=lambda: raise_frame(logs_frame), width=200, height=40)
 access_logs_button.pack(side='left', padx=10, pady=10, anchor='center')
 
-transcribe_button = ctk.CTkButton(button_frame, text="Transcribe", command=lambda: raise_frame(transcribe_frame), width=200, height=40)
-transcribe_button.pack(side='left', padx=10, pady=10, anchor='center')
-
 
 button = ctk.CTkButton(button_frame, text='Light', command = lambda: ctk.set_appearance_mode('light'), width=200, height=40)
 button.pack(side='left', padx=10, pady=10, anchor='center')
@@ -273,31 +318,52 @@ call_label.pack(pady=(30,20) , padx=20)
 callee_id_entry = ctk.CTkEntry(call_frame)
 callee_id_entry.pack(pady=10, padx=20)
 
-def open_call_window(username):
+def open_call_window(username, call_session):
     global hang_up_button
     def mute_on():
-        shared.is_muted = True
+        user.is_muted = True
         mute_button.configure(fg_color='red')
         mute_button.configure(hover_color='red')
         mute_button.configure(image=mute_photo)
         mute_button.configure(command=mute_off)
     def mute_off():
-        shared.is_muted = False
+        user.is_muted = False
         mute_button.configure(fg_color='white')
         mute_button.configure(hover_color='white')
         mute_button.configure(image=unmute_photo)
         mute_button.configure(command=mute_on)
 
     def obfuscate_toggle():
-        if shared.obfuscation_on.is_set():
-            shared.obfuscation_on.clear()
+        if user.obfuscation_on.is_set():
+            user.obfuscation_on.clear()
         else:
-            shared.obfuscation_on.set()
+            user.obfuscation_on.set()
+
+    def transcribe_toggle():
+        if user.transcription_on.is_set():
+            user.transcription_on.clear()
+        else:
+            user.transcription_on.set()
 
     call_window = Toplevel(app)
     call_window.title("Call")
     call_window.geometry("1400x700")
     call_window.configure(bg="#333333")  # Light gray background
+
+    transcribe_textbox = ctk.CTkTextbox(call_window, height=200, width=500)
+    transcribe_textbox.pack(pady=10, padx=20, expand=True, fill='both')
+    transcribe_textbox.configure(state= "disabled")
+
+    def update_transcribe_textbox(text):
+        translation = translator.translate(text, src=user.spoken_language, dest=user.transcription_language)
+        def callback():
+            transcribe_textbox.configure(state="normal")
+            transcribe_textbox.insert(tk.END, translation.text + '\n')
+            transcribe_textbox.see(tk.END)
+            transcribe_textbox.configure(state="disabled")
+        app.after(0, callback)
+
+    call_session.update_transcription_textbox = update_transcribe_textbox
 
     pfp_image = Image.open("assets/pfp.png")
     pfp_photo = ctk.CTkImage(pfp_image, size=(200,200))
@@ -373,7 +439,7 @@ def open_call_window(username):
                                 width=40, 
                                 corner_radius=40, 
                                 fg_color="white", 
-                                command=mute_call)
+                                command=transcribe_toggle)
     transcribe_button.pack(side="right", padx=25)
     obfuscate_button.pack(side="right", padx=25)
     mute_button.pack(side="left", padx=25)
@@ -392,7 +458,7 @@ def mute_call():
 
 def hang_up_call(window):
     global input_stream, output_stream, audio, start_call_thread, listen_call_thread
-    shared.call_end.set()
+    call_session.call_end.set()
     #listen_call_thread.join()
     start_call_thread.join()
 
@@ -405,8 +471,12 @@ def hang_up_call(window):
         output_stream.close()
         print("output stream closed")
 
-    shared.call_end.clear()
-    shared.in_call.clear()
+    #log transcript
+    print(call_session.transcriptions)
+    #database.log_call(call_session.caller, call_session.callee, 5, call_session.transcriptions)
+
+    call_session.call_end.clear()
+    user.in_call.clear()
     window.destroy()
 
 # Modified call_user function to include hiding and showing the Start Recording button
@@ -427,16 +497,8 @@ call_button.pack(pady=10, padx=20)
 def comboboxin_callback(choice):
     # Assuming `shared.py` has been imported as `shared`
     if choice in input_device_name_to_info_mapping:
-        shared.input_device = input_device_name_to_info_mapping[choice]
-        print(f"Device selected: {shared.input_device}")
-    else:
-        print("Selected device not found in mapping.")
-
-def comboboxout_callback(choice):
-    # Assuming `shared.py` has been imported as `shared`
-    if choice in output_device_name_to_info_mapping:
-        shared.output_device = output_device_name_to_info_mapping[choice]
-        print(f"Device selected: {shared.output_device}")
+        user.input_device = input_device_name_to_info_mapping[choice]
+        print(f"Device selected: {user.input_device}")
     else:
         print("Selected device not found in mapping.")
 
@@ -446,11 +508,39 @@ comboboxin = ctk.CTkOptionMenu(call_frame, values=[], command=comboboxin_callbac
 comboboxin.set("Select Input")  # set initial value
 comboboxin.pack(pady=10)
 
+def comboboxout_callback(choice):
+    # Assuming `shared.py` has been imported as `shared`
+    if choice in output_device_name_to_info_mapping:
+        user.output_device  = output_device_name_to_info_mapping[choice]
+        print(f"Device selected: {user.output_device} ")
+    else:
+        print("Selected device not found in mapping.")
+
 comboboxout = ctk.CTkOptionMenu(call_frame, values=[], command=comboboxout_callback, width=200)
 # combobox.grid(row=0, column=0, padx=20, pady=10)
 
 comboboxout.set("Select Output")  # set initial value
 comboboxout.pack(pady=10)
+
+# Update transcription language dropdown
+def transcription_language_callback(choice):
+    user.transcription_language = LANGUAGES[choice]
+    print(f"Transcription language selected: {choice}")
+
+# Create the button
+combobox_translation = ctk.CTkOptionMenu(call_frame, values=list(LANGUAGES.keys()), command=transcription_language_callback, width=200)
+combobox_translation.set("Select Transcription Language")
+combobox_translation.pack(pady=10)
+
+# Update spoken language dropdown
+def spoken_language_callback(choice):
+    user.spoken_language = LANGUAGES[choice]
+    print(f"Spoken language selected: {choice}")
+
+# Create the button
+combobox_translation = ctk.CTkOptionMenu(call_frame, values=list(LANGUAGES.keys()), command=spoken_language_callback, width=200)
+combobox_translation.set("Select Spoken Language")
+combobox_translation.pack(pady=10)
 
 # Initialize Start Recording Button but don't pack it initially
 start_recording_button = ctk.CTkButton(call_frame, text="Start Recording", command=start_recording)
@@ -549,9 +639,7 @@ def sign_in():
     username = username_entry.get()
     password = password_entry.get()
     if(database.login(username, password)):
-        # Set current user
-        shared.current_user = username
-        
+        user.username = username
         connect_with_server()
 
         raise_frame(main_frame)
@@ -561,7 +649,6 @@ def sign_in():
         messagebox.showinfo("Login Attempt Failed", "The username or password you entered is incorrect.")
         password_entry.delete(0, tk.END)
     
-
 def sign_up():
     username = username_entry_signup.get()
     password = password_entry_signup.get()
@@ -572,59 +659,6 @@ def sign_up():
         raise_frame(log_in_frame)
     else:
         messagebox.showinfo("Signup Attempt", f"Passwords do not match\nPlease try again")
-
-# Transcribe Frame Content
-transcribe_label = ctk.CTkLabel(transcribe_frame, text="Transcription:", font=(clock_font_family, 20))
-transcribe_label.pack(pady=20, padx=20)
-
-transcribe_textbox = ctk.CTkTextbox(transcribe_frame, height=400, width=500)
-transcribe_textbox.pack(pady=10, padx=20, expand=True, fill='both')
-transcribe_textbox.configure(state= "disabled")
-
-
-def update_transcribe_textbox(text):
-    # global last_words
-    # result = utilities.subtract_strings(text, last_words)
-    # last_words = text
-    def callback():
-        transcribe_textbox.configure(state="normal")
-        transcribe_textbox.insert(tk.END,text)
-        transcribe_textbox.configure(state="disabled")
-    app.after(0, callback)
-
-def start_transcription_thread():
-    # Start the speech-to-text process in a separate thread to keep UI responsive
-    transcription_thread = Thread(target=start_speech_to_text_transcription, args=(update_transcribe_textbox, stop_transcription_event),daemon=True)
-    transcription_thread.start()
-
-def start_transcription():
-    stop_transcription_event.clear()  # Ensure the stop event is clear at start
-    stop_transcription_button.configure(state="normal")  # Enable the Stop button
-    start_transcription_button.configure(state="disabled")  # Optionally disable the Start button
-    start_transcription_thread()
-
-
-def stop_transcription():
-    stop_transcription_event.set()  # Signal the transcription thread to stop
-    stop_transcription_button.configure(state="disabled")  # Disable the Stop button
-    start_transcription_button.configure(state="normal")  # Re-enable the Start button
-
-
-button_container_frame = ctk.CTkFrame(transcribe_frame)
-button_container_frame.pack(pady=10, padx=20)  # Adjust padding as needed
-
-# Modify the start_transcription_button to be packed inside button_container_frame
-start_transcription_button = ctk.CTkButton(button_container_frame, text="Start", command=start_transcription)
-start_transcription_button.pack(side='left', padx=5)  # Pack it on the left, add some padding for spacing
-
-# Modify the stop_transcription_button similarly
-stop_transcription_button = ctk.CTkButton(button_container_frame, text="Stop", state="disabled")
-stop_transcription_button.pack(side='left', padx=5)  # Pack it next to the start button
-stop_transcription_button.configure(command=stop_transcription)
-
-back_button_transcribe = ctk.CTkButton(transcribe_frame, text="Back to Main", command=lambda: raise_frame(main_frame))
-back_button_transcribe.pack(pady=20, padx=20)
-
 
 # Setting up the log_in_frame
 log_in_frame_content = ctk.CTkFrame(log_in_frame,fg_color='transparent')
@@ -730,4 +764,3 @@ app.protocol("WM_DELETE_WINDOW", on_close)
 raise_frame(log_in_frame)
 
 app.mainloop()
-
