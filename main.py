@@ -469,14 +469,14 @@ def open_call_window(callee_username, call_session):
     def obfuscate_toggle():
         if user.obfuscation_on.is_set():
             # Configurations when turning off obfuscation
-            obfuscate_button.configure(fg_color='white', hover_color='#7D7D7D', image=obfuscate_photo)
+            obfuscate_button.configure(fg_color='blue', hover_color='#7D7D7D', image=obfuscate_photo)
             user.obfuscation_on.clear()
-            show_message("Voice now unobfuscated")  # Show this message while unobfuscated
+            show_message("Voice now obfuscated")  # Show this message while unobfuscated
         else:
             # Configurations when turning on obfuscation
-            obfuscate_button.configure(fg_color='blue', hover_color='#7D7D7D', image=unobfuscate_photo)
+            obfuscate_button.configure(fg_color='red', hover_color='#7D7D7D', image=unobfuscate_photo)
             user.obfuscation_on.set()
-            show_message("Voice now obfuscated")  # Show this message while obfuscated
+            show_message("Voice now unobfuscated")  # Show this message while obfuscated
 
 
     def transcribe_toggle():
@@ -579,7 +579,7 @@ def open_call_window(callee_username, call_session):
                                 height=40, 
                                 width=40, 
                                 corner_radius=40, 
-                                fg_color='white', 
+                                fg_color='blue', 
                                 command=obfuscate_toggle)
     # obfuscate_button.pack(side="left", padx=10)
     
