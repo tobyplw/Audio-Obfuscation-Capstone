@@ -461,8 +461,6 @@ def open_call_window(callee_username, call_session):
     def show_message(message):
         obfuscate_display_label.configure(text=message)
         obfuscate_display_label.pack(side='bottom', fill='x', padx=10, pady=5)
-        # Schedule message to be cleared after 3 seconds
-        obfuscate_display_label.after(3000, hide_message)
 
     def hide_message():
         obfuscate_display_label.pack_forget()
@@ -470,18 +468,16 @@ def open_call_window(callee_username, call_session):
 
     def obfuscate_toggle():
         if user.obfuscation_on.is_set():
-            obfuscate_button.configure(fg_color='white')
-            obfuscate_button.configure(hover_color='#7D7D7D')
-            obfuscate_button.configure(image=obfuscate_photo)
+            # Configurations when turning off obfuscation
+            obfuscate_button.configure(fg_color='white', hover_color='#7D7D7D', image=obfuscate_photo)
             user.obfuscation_on.clear()
-            show_message("Voice now obfuscated")  # Display unobfuscate message
+            show_message("Voice now unobfuscated")  # Show this message while unobfuscated
         else:
-
-            obfuscate_button.configure(fg_color='blue')  # Choose appropriate color
-            obfuscate_button.configure(hover_color='#7D7D7D')  # Choose appropriate hover color
-            obfuscate_button.configure(image=unobfuscate_photo)
+            # Configurations when turning on obfuscation
+            obfuscate_button.configure(fg_color='blue', hover_color='#7D7D7D', image=unobfuscate_photo)
             user.obfuscation_on.set()
-            show_message("Voice now unobfuscated")  # Display unobfuscate message
+            show_message("Voice now obfuscated")  # Show this message while obfuscated
+
 
     def transcribe_toggle():
         if user.transcription_on.is_set():
