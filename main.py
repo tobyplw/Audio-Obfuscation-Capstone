@@ -470,6 +470,13 @@ def open_call_window(callee_username, call_session):
         else:
             user.transcription_on.set()
 
+    def tts_toggle():
+        if user.tts_on.is_set():
+            user.tts_on.clear()
+        else:
+            user.tts_on.set()
+
+
     call_window = Toplevel(app)
     call_window.title("Call")
     call_window.geometry("1400x700")
@@ -566,10 +573,21 @@ def open_call_window(callee_username, call_session):
                                 corner_radius=40, 
                                 fg_color="white", 
                                 command=transcribe_toggle)
+    tts_button = ctk.CTkButton(buttons_frame, 
+                                image=tts_photo, 
+                                text="", 
+                                height=40, 
+                                width=40, 
+                                corner_radius=40, 
+                                fg_color="white", 
+                                command=tts_toggle)
+    
     transcribe_button.pack(side="right", padx=25)
+    tts_button.pack(side="right", padx=25)
     obfuscate_button.pack(side="right", padx=25)
     mute_button.pack(side="left", padx=25)
     hang_up_button.pack(side="left", padx=25)
+
 
 def mute_call():
     # Logic to mute the call

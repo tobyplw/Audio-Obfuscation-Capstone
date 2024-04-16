@@ -175,6 +175,7 @@ class User:
         self.is_muted = False
         self.obfuscation_on = Event()
         self.in_call = Event()
+        self.tts_on = Event()
         self.current_call = None
         self.transcription_language = 'en'
         self.spoken_language = 'en'
