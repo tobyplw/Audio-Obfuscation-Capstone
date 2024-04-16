@@ -458,11 +458,30 @@ def open_call_window(callee_username, call_session):
         mute_button.configure(image=unmute_photo)
         mute_button.configure(command=mute_on)
 
+    def show_message(message):
+        obfuscate_display_label.configure(text=message)
+        obfuscate_display_label.pack(side='bottom', fill='x', padx=10, pady=5)
+        # Schedule message to be cleared after 3 seconds
+        obfuscate_display_label.after(3000, hide_message)
+
+    def hide_message():
+        obfuscate_display_label.pack_forget()
+
+
     def obfuscate_toggle():
         if user.obfuscation_on.is_set():
+            obfuscate_button.configure(fg_color='#7D7D7D')
+            obfuscate_button.configure(hover_color='white')
+            obfuscate_button.configure(image=obfuscate_photo)
             user.obfuscation_on.clear()
+            show_message("Voice now obfuscated")  # Display unobfuscate message
         else:
+
+            obfuscate_button.configure(fg_color='blue')  # Choose appropriate color
+            obfuscate_button.configure(hover_color='#7D7D7D')  # Choose appropriate hover color
+            obfuscate_button.configure(image=unobfuscate_photo)
             user.obfuscation_on.set()
+            show_message("Voice now unobfuscated")  # Display unobfuscate message
 
     def transcribe_toggle():
         if user.transcription_on.is_set():
@@ -472,8 +491,11 @@ def open_call_window(callee_username, call_session):
 
     call_window = Toplevel(app)
     call_window.title("Call")
-    call_window.geometry("1400x700")
+    call_window.geometry("1400x740")
     call_window.configure(bg="#333333")  # Light gray background
+
+    obfuscate_display_label = ctk.CTkLabel(call_window, text="", height=20)  # main_frame should be your main GUI frame
+    obfuscate_display_label.pack_forget()  # Start with the label hidden
 
     transcribe_textbox = ctk.CTkTextbox(call_window, height=200, width=500)
     transcribe_textbox.pack(pady=10, padx=20, expand=True, fill='both')
@@ -544,13 +566,17 @@ def open_call_window(callee_username, call_session):
 
     obfuscate_photo = ctk.CTkImage(obfuscate_image, size=(40,40))
 
+    unobfuscate_image = Image.open("assets/unobfuscate.png")
+
+    unobfuscate_photo = ctk.CTkImage(unobfuscate_image, size=(40,40))
+
     obfuscate_button = ctk.CTkButton(buttons_frame, 
                                 image=obfuscate_photo, 
                                 text="", 
                                 height=40, 
                                 width=40, 
                                 corner_radius=40, 
-                                fg_color="white", 
+                                fg_color='blue', 
                                 command=obfuscate_toggle)
     # obfuscate_button.pack(side="left", padx=10)
     
