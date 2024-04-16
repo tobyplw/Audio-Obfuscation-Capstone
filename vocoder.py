@@ -45,31 +45,31 @@ class Vocoder:
         self.numFreqs = 20
         self.a_freq_coeff, self.b_freq_coeff = self.generate_bandpass_coefficients()
 
-        self.comp = Compressor(threshold_db=-5, ratio=2.5)
-        self.gate =  NoiseGate(threshold_db=-100, ratio=10, attack_ms = 1.0, release_ms = 100)
-        self.gain = Gain(gain_db=5)
-        self.pitch = PitchShift(semitones=-3)
-        self.distort = Distortion(drive_db = 15)
-        self.bitcrush = Bitcrush(bit_depth = 4)
-        self.chorus = Chorus(rate_hz = 1.0, depth = 0.25, centre_delay_ms= 7.0, feedback = 0.0, mix = 0.5)
-        self.phone = GSMFullRateCompressor()
-        self.phaser = Phaser(rate_hz = .1, depth = 10, centre_frequency_hz = 1000, feedback = 1, mix = 1)
-        self.ladder = LadderFilter(mode = LadderFilter.Mode.BPF24)
-        self.reverb = Reverb(wet_level = .33, room_size = 1)
+        # self.comp = Compressor(threshold_db=-5, ratio=2.5)
+        # self.gate =  NoiseGate(threshold_db=-100, ratio=10, attack_ms = 1.0, release_ms = 100)
+        # self.gain = Gain(gain_db=5)
+        self.pitch = PitchShift(semitones=-2)
+        # self.distort = Distortion(drive_db = 15)
+        # self.bitcrush = Bitcrush(bit_depth = 4)
+        # self.chorus = Chorus(rate_hz = 1.0, depth = 0.25, centre_delay_ms= 7.0, feedback = 0.0, mix = 0.5)
+        # self.phone = GSMFullRateCompressor()
+        # self.phaser = Phaser(rate_hz = .1, depth = 10, centre_frequency_hz = 1000, feedback = 1, mix = 1)
+        # self.ladder = LadderFilter(mode = LadderFilter.Mode.BPF24)
+        # self.reverb = Reverb(wet_level = .33, room_size = 1)
 
                 # Create a Pedalboard with audio effects
-        self.pedalboard = Pedalboard([
+        # self.pedalboard = Pedalboard([
             
-            #NoiseGate(threshold_db=-100, ratio=10, attack_ms = 1.0, release_ms = 100),
-            Compressor(threshold_db=-5, ratio=2.5),
-            Gain(gain_db=5),
-            NoiseGate(threshold_db=-100, ratio=10, attack_ms = 1.0, release_ms = 100),
-            Distortion(drive_db = 35),
-            PitchShift(semitones=2),  # Shift pitch down by 3 semitones
-            #Phaser(rate_hz=20, depth=2, feedback=1, mix = .5),  # Phaser effect
-            Reverb(wet_level = .33, room_size = 1)
+        #     #NoiseGate(threshold_db=-100, ratio=10, attack_ms = 1.0, release_ms = 100),
+        #     Compressor(threshold_db=-5, ratio=2.5),
+        #     Gain(gain_db=5),
+        #     NoiseGate(threshold_db=-100, ratio=10, attack_ms = 1.0, release_ms = 100),
+        #     Distortion(drive_db = 35),
+        #     PitchShift(semitones=2),  # Shift pitch down by 3 semitones
+        #     #Phaser(rate_hz=20, depth=2, feedback=1, mix = .5),  # Phaser effect
+        #     Reverb(wet_level = .33, room_size = 1)
             
-        ])
+        # ])
 
 
         # Example usage
