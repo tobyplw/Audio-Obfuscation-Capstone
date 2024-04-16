@@ -161,15 +161,23 @@ def talk(record_stream, callee_username, user, call_session):
             
 
             if not user.obfuscation_on.is_set():
+                orig_data = in_data
                 in_data = voc.audio_effects(in_data)
+
             pcm_data = voc.float2pcm(in_data)
             data = pcm_data.tobytes('C')
 
-            #audio_np_int16 = (in_data * 32767).astype(np.int16)
+            
 
             if not user.is_muted:
+                #audio_np_int16 = (in_data * 32767).astype(np.int16)
                 #call_session.audio_data.put(audio_np_int16.tobytes())
-                call_session.audio_data.put(data)
+                if not user.obfuscation_on.is_set():
+                    pcm_data = voc.float2pcm(orig_data)
+                    data = pcm_data.tobytes('C')
+                    call_session.audio_data.put(data)
+                else:
+                    call_session.audio_data.put(data)
             # print(call_session.audio_data.qsize())
             # print(call_session.audio_data)
                 
