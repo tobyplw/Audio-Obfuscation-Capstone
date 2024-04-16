@@ -649,7 +649,6 @@ def call_user():
     # print(f"Calling User with ID: {callee_id}")  # Placeholder for actual call functionality
     messagebox.showinfo("Call Authenticated", f"Calling User with ID: {callee_id}")  # Show a dialog box as feedback
     send_call_message(callee_id)
-    start_recording_button.pack(before=back_button_call, pady=10, padx=20)  # Adjusted to pack before the Back button
 
 call_button = ctk.CTkButton(call_frame, text="Call", fg_color='green', command=call_user)
 call_button.pack(pady=10, padx=20)
@@ -686,8 +685,6 @@ def handle_add_contact():
     else:
         messagebox.showwarning("Missing Information", "Please enter BOTH a username and an alias.")
 
-# Initialize Start Recording Button but don't pack it initially
-start_recording_button = ctk.CTkButton(call_frame, text="Start Recording", command=start_recording)
 
 def update_contacts_display(filtered_contacts=None):
     for widget in scrollable_contacts_frame.winfo_children():
