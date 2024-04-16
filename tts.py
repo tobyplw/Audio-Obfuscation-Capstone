@@ -3,7 +3,7 @@ import requests
 import pyaudio
 
 STREAM_AUDIO=True
-MODEL_NAME = f"aura-orion-en"
+MODEL_NAME = f"aura-athena-en"
 CONTAINER= f"none"
 ENCODING = f"linear16"
 SAMPLE_RATE = 24000
@@ -49,10 +49,8 @@ def send_streaming_audio(payload, call_session):
         for chunk in r.iter_content(chunk_size=chunk_size):
             if chunk:
                 if buffered:
-                    print("error buffered")
                     call_session.obfuscation_queue.put(chunk)
                 else:
-                    print("error else buffered")
                     buffer.extend(chunk)
                     if len(buffer) >= min_buffer_size:
                         # Send full chunks of 512 bytes
@@ -70,7 +68,6 @@ def send_streaming_audio(payload, call_session):
 
         # If there's any data left in the buffer that's less than 512 bytes
         if buffer:
-            print("error buffered and not buffered")
             call_session.obfuscation_queue.put(bytes(buffer))
 
     # Close the stream
