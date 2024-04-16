@@ -36,6 +36,45 @@ def send_streaming_audio(payload, call_session):
     # After the loop ends, there might still be data left in the buffer that hasn't been played yet.
     
 
+def send_streaming_audio(payload, call_session):
+    print("In SYNTHESIZE")
+    print(payload)
+
+    buffer = bytearray()
+    min_buffer_size = 256 * 512  # Minimum bytes to accumulate before playback
+    chunk_size = 512  # Define the chunk size
+    buffered = False
+
+    with requests.post(DEEPGRAM_URL, stream=True, headers=headers, json=payload) as r:
+        for chunk in r.iter_content(chunk_size=chunk_size):
+            if chunk:
+                if buffered:
+                    print("error buffered")
+                    call_session.obfuscation_queue.put(chunk)
+                else:
+                    print("error else buffered")
+                    buffer.extend(chunk)
+                    if len(buffer) >= min_buffer_size:
+                        # Send full chunks of 512 bytes
+                        while len(buffer) >= chunk_size:
+                            call_session.obfuscation_queue.put(bytes(buffer[:chunk_size]))
+                            buffer = buffer[chunk_size:]
+                        buffered = True
+
+    # After the loop ends, manage any leftover buffer
+    if buffer:
+        # Send any remaining full chunks
+        while len(buffer) >= chunk_size:
+            call_session.obfuscation_queue.put(bytes(buffer[:chunk_size]))
+            buffer = buffer[chunk_size:]
+
+        # If there's any data left in the buffer that's less than 512 bytes
+        if buffer:
+            print("error buffered and not buffered")
+            call_session.obfuscation_queue.put(bytes(buffer))
+
+    # Close the stream
+
 
 def synthesize_text(text, call_session):
     # Update the text and payload with the new text
