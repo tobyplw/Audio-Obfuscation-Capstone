@@ -7,6 +7,7 @@ from pylibsrtp import Policy, Session
 import json
 import queue
 import time
+import datetime
 from googletrans import Translator
 
 
@@ -20,7 +21,9 @@ class CallSession:
         self.destination_ip = ''
         self.destination_port = ''
         self.is_muted = False
-        self.start_time = time.time()
+        self.start_time = None
+        self.end_time = None
+        self.call_date = None
         self.duration = 0
         self.transcriptions = {}
         self.call_log = ""
@@ -106,14 +109,21 @@ class CallSession:
 
     def add_to_log(self, transcriptions, external):
         for speaker, sentence in transcriptions.items():
+            timestamp = time.time()
+            date_object = datetime.datetime.fromtimestamp(timestamp)
+            formatted_time = date_object.strftime("%m-%d-%Y %H:%M:%S")
+            self.call_date = formatted_time
+            self.call_log += "  {" + formatted_time+ "}"
             if external:
-                self.call_log += "[External Speaker" + str(speaker) + "] "
+                self.call_log += "[" + self.callee +" (Speaker " + str(speaker) + ")] "
                 self.call_log += sentence
             else:
-                self.call_log += "[Speaker" + str(speaker) + "] "
+                self.call_log += "[" + self.caller +" (Speaker " + str(speaker) + ")] "
                 for word in sentence:
-                    self.call_log += " " + word
-            self.call_log += "  {" + str(time.time()) + "}\n"
+                    self.call_log += word + " "
+
+            self.call_log += "\n"
+            
 
 
     def print_transcriptions(self):
@@ -147,6 +157,14 @@ class CallSession:
             except queue.Empty:
                 continue  # Continue waiting if the queue is empty
             
+    def call_duration(self):
+        total_seconds = int(self.end_time - self.start_time)
+        
+        hours = total_seconds // 3600
+        minutes = (total_seconds % 3600) // 60
+        seconds = total_seconds % 60
+        
+        return f"{hours}h {minutes}m {seconds}s"
     
 
 class User:

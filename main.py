@@ -33,6 +33,7 @@ global server
 server = Server()
 global call_session
 call_session = CallSession('', '')
+import time
 
 # Dictionary for available spoken and transcribed languages
 LANGUAGES = {
@@ -154,12 +155,13 @@ def handle_error_message(callee_username):
 def handle_call(destination_ip, destination_port, callee_username, user):
     global input_stream, output_stream, start_call_thread, listen_call_thread
     call_session = CallSession('', '')
+    call_session.start_time = time.time()
     call_session.caller = user.username
     call_session.callee = callee_username
     call_session.destination_ip = destination_ip
     call_session.destination_port = destination_port
 
-    open_call_window(user.username, call_session)
+    open_call_window(callee_username, call_session)
     input_stream, output_stream = call.start_audio_stream(user.input_device, user.output_device, audio)
     start_call_thread = threading.Thread(target=call.talk, args=(input_stream,callee_username, user, call_session), daemon=True)
 
@@ -321,7 +323,7 @@ call_label.pack(pady=(30,20) , padx=20)
 callee_id_entry = ctk.CTkEntry(call_frame)
 callee_id_entry.pack(pady=10, padx=20)
 
-def open_call_window(username, call_session):
+def open_call_window(callee_username, call_session):
     global hang_up_button
     def mute_on():
         user.is_muted = True
@@ -358,7 +360,6 @@ def open_call_window(username, call_session):
     transcribe_textbox.configure(state= "disabled")
 
     def update_transcribe_textbox(text):
-        #translation = translator.translate(text, src=user.spoken_language, dest=user.transcription_language)
         def callback():
             transcribe_textbox.configure(state="normal")
             transcribe_textbox.delete('1.0', 'end')
@@ -375,7 +376,7 @@ def open_call_window(username, call_session):
     pfp_label = ctk.CTkLabel(call_window, image = pfp_photo, text="")
     pfp_label.pack(pady=(100,20))
 
-    user_label = ctk.CTkLabel(call_window, text=username, font=("Roboto", 30))
+    user_label = ctk.CTkLabel(call_window, text=callee_username, font=("Roboto", 30))
     user_label.pack()
 
     buttons_frame = ctk.CTkFrame(call_window, fg_color="transparent")
@@ -477,8 +478,10 @@ def hang_up_call(window, call_session):
         print("output stream closed")
 
     #log transcript
+    call_session.end_time = time.time()
     print(call_session.call_log)
-    #database.log_call(call_session.caller, call_session.callee, 5, call_session.transcriptions)
+    database.log_call(call_session.caller, call_session.callee, call_session.call_date, call_session.call_duration(), call_session.transcriptions)
+
 
     call_session.call_end.clear()
     user.in_call.clear()
@@ -613,15 +616,16 @@ def setup_logs_frame(username):
     logs_table.pack(expand=True, fill='both', side='top')
 
     # Define the columns
-    logs_table['columns'] = ('callID', 'caller', 'callee', 'callDate', 'call_transcript')
+    logs_table['columns'] = ('callID', 'callDate', 'caller',  'callee',  'call_transcript')
 
     # Format the columns
     logs_table.column("#0", width=0, stretch=tk.NO)  # Phantom column
-    logs_table.column("callID", anchor=tk.W, width=80)
+    logs_table.column("callID", anchor=tk.W, width=40)
+    logs_table.column("callDate", anchor=tk.W, width=120)
+    #logs_table.column("call_duration", anchor=tk.W, width=80)
     logs_table.column("caller", anchor=tk.W, width=120)
     logs_table.column("callee", anchor=tk.W, width=120)
-    logs_table.column("callDate", anchor=tk.W, width=120)
-    logs_table.column("call_transcript", anchor=tk.W, width=300)
+    logs_table.column("call_transcript", anchor=tk.W, width=400)
 
     # Create Headings
     logs_table.heading("#0", text="", anchor=tk.W)
@@ -629,6 +633,7 @@ def setup_logs_frame(username):
     logs_table.heading("caller", text="Caller", anchor=tk.W)
     logs_table.heading("callee", text="Callee", anchor=tk.W)
     logs_table.heading("callDate", text="Call Date", anchor=tk.W)
+    #logs_table.column("call_duration", text="Duration", anchor=tk.W)
     logs_table.heading("call_transcript", text="Call Recording", anchor=tk.W)
 
     #CHANGE THE USERNAME HERE

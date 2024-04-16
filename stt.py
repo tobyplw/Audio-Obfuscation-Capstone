@@ -56,7 +56,8 @@ def start_speech_to_text_transcription(transcription_on, user, call_session):
             if len(sentence) > 0 and not user.is_muted:
                 # print(parsed_message)
                 send_transcription_message(call_session, user, parsed_message)
-                call_session.add_to_log(parsed_message["Text"], external = False)
+                if parsed_message['is_final']:
+                    call_session.add_to_log(parsed_message["text"], external = False)
                 #update_textbox_callback(f"Speaker: {sentence}\n")
                 #update_textbox_callback(f" {sentence}")
 

@@ -16,7 +16,7 @@ server_socket.bind((HOST, PORT))
 
 
 def determine_message(data, client_address, client_port):
-    print(data)
+    #print(data)
     From_Username = data["From_Username"]
     action = data["Action"]
     time = data["Time"]
@@ -68,10 +68,10 @@ def start_call(caller_username, callee_username, client_address, client_port):
         caller_port = caller_info["Internal_Port"]
 
 
-    callee_message = {"Action" : "CALL", "From_Username" : callee_username,  "To_Username" : caller_username, "Destination_IP" : caller_ip, "Destination_Port" : caller_port, "Time" : time.time()}
+    callee_message = {"Action" : "CALL", "From_Username" : caller_username,  "To_Username" : callee_username, "Destination_IP" : caller_ip, "Destination_Port" : caller_port, "Time" : time.time()}
     server_socket.sendto(json.dumps(callee_message).encode(), callee_address)
 
-    caller_message = {"Action" : "CALL", "From_Username" : caller_username,  "To_Username" : callee_username, "Destination_IP" : callee_ip, "Destination_Port" : callee_port, "Time" : time.time()}
+    caller_message = {"Action" : "CALL", "From_Username" : callee_username,  "To_Username" : caller_username, "Destination_IP" : callee_ip, "Destination_Port" : callee_port, "Time" : time.time()}
     server_socket.sendto(json.dumps(caller_message).encode(), caller_address)
 
 
@@ -88,7 +88,7 @@ def check_clients():
         to_remove = []
         time_now = time.time()
         for client in clients.keys():
-            if time_now - clients[client]["Time"] > 10:
+            if time_now - clients[client]["Time"] > 5:
                 to_remove.append(client)
 
         for item in to_remove:
