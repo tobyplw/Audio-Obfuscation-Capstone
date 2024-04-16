@@ -299,8 +299,6 @@ access_logs_button.pack(side='left', padx=10, pady=10, anchor='center')
 navigate_settings_button = ctk.CTkButton(main_frame_content, text="Settings", command=lambda: raise_frame(settings_frame), width=200, height=40, fg_color='grey', hover_color='#6f6e70')
 navigate_settings_button.pack(pady=10)
 
-button = ctk.CTkButton(button_frame, text='Light', command = lambda: ctk.set_appearance_mode('light'), width=200, height=40)
-button.pack(side='left', padx=10, pady=10, anchor='center')
 
 
 def sign_out():
@@ -317,6 +315,28 @@ sign_out_button.pack(pady=(10, 20), padx=20, anchor='e')
 # Settings Frame Content
 settings_label = ctk.CTkLabel(settings_frame, text="Settings", font=(clock_font_family, 35))
 settings_label.pack(pady=20)
+
+def switch_to_light_mode():
+    ctk.set_appearance_mode('light')  # Set the appearance to light mode
+    light_button.configure(text='Dark Mode', command=switch_to_dark_mode)  # Update button to switch to dark mode next
+
+def switch_to_dark_mode():
+    ctk.set_appearance_mode('dark')  # Set the appearance to dark mode
+    light_button.configure(text='Light Mode', command=switch_to_light_mode)  # Update button to switch to light mode next
+
+def initialize_button():
+    global light_button
+    light_button = ctk.CTkButton(settings_frame, text='Light Mode', command=switch_to_light_mode, width=200, height=40)
+    light_button.pack(padx=10, pady=10)
+
+    # Set the initial mode; you can use a function to load a saved preference if applicable
+    initial_mode = ctk.get_appearance_mode()
+    if initial_mode == 'light':
+        switch_to_light_mode()
+    else:
+        switch_to_dark_mode()
+
+initialize_button()
 
 def comboboxin_callback(choice):
     if choice in input_device_name_to_info_mapping:
@@ -376,6 +396,8 @@ def update_input_devices_combobox():
     comboboxin = ctk.CTkOptionMenu(settings_frame, values=device_names, height=40, width=200, command=comboboxin_callback)
     output_label = ctk.CTkLabel(settings_frame, text="User Devices:", font=("Arial", 22))
     output_label.pack(pady=(30,20) , padx=20)
+    input_label = ctk.CTkLabel(settings_frame, text="Input Device:", font=("Arial", 15))
+    input_label.pack(padx=20)
     comboboxin.pack(pady=10)
     comboboxin.set(device_names[0])  # Optionally set a default value
     User.input_device = device_names[0]
@@ -392,6 +414,8 @@ def update_output_devices_combobox():
 
     # Recreate the combobox with the new values
     comboboxout = ctk.CTkOptionMenu(settings_frame, values=device_names, height=40, width=200, command=comboboxout_callback)
+    output_label = ctk.CTkLabel(settings_frame, text="Input Device:", font=("Arial", 15))
+    output_label.pack(padx=20)
     comboboxout.pack(pady=10)
     comboboxout.set(device_names[0])  # Optionally set a default value
     User.output_device = device_names[0]
