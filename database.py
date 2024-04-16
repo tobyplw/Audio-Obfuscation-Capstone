@@ -103,12 +103,17 @@ def get_calls(username):
     return call_logs
 
 def save_settings(username, input_device, output_device):
+    # Update or insert the user settings
     update_result = Users.update_one(
         {"username": username},
-        {"$set": {"input_device": input_device, "output_device": output_device}}
+        {"$set": {"input_device": input_device, "output_device": output_device}},
+        upsert=True  # Ensure creation if the user doesn't already have settings
     )
-    if update_result.modified_count == 0:
-        print(f"No changes made for {username}")
+    if update_result.matched_count == 0 and update_result.upserted_id is None:
+        print(f"No changes made for {username}, but an entry was created.")
+    else:
+        print(f"Settings updated for {username}.")
+
 
 def get_settings(username):
     user = Users.find_one({"username": username}, {'input_device': 1, 'output_device': 1})
