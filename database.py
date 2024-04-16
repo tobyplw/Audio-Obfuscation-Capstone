@@ -78,9 +78,8 @@ def get_calls(username):
     user = Users.find_one({"username": username})
 
     # Ensure you have the correct query to match the caller's ID with the stored calls
-    calls_query = {
-            {"caller": user}
-    }
+    calls_query = {"caller": user}
+
 
     calls = Calls.find(calls_query).sort("call_date")
     
@@ -94,7 +93,7 @@ def get_calls(username):
             str(call["_id"]),  # Assuming each call has a unique ID stored under "_id"
             call["caller"]["username"],  # Caller's username
             call["callee"]["username"],  # Callee's username
-            call["call_date"].strftime("%m-%d-%Y %H:%M:%S"),  # Formatting date, assuming it's stored as a datetime object
+            call["call_date"],  # Formatting date, assuming it's stored as a datetime object
             call["call_transcript"]  # Assuming you store the transcript directly
         )
         call_logs.append(call_log)  # Add the tuple to the list
