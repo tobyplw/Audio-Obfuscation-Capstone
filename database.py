@@ -61,11 +61,13 @@ def login(username, password):
         return False
 
 #Function to log a users call
-def log_call (caller, callee, call_date, call_duration, call_transcript):
+def log_call (caller, callee, call_date, call_transcript):
+    caller = Users.find_one({"username": caller})
+    callee = Users.find_one({"username": callee})
+
     new_call = {"caller": caller, 
                 "callee": callee, 
                 "call_date": call_date, 
-                "call_duration": call_duration, 
                 "call_transcript": call_transcript
                 }
     Calls.insert_one(new_call)
@@ -77,10 +79,7 @@ def get_calls(username):
 
     # Ensure you have the correct query to match the caller's ID with the stored calls
     calls_query = {
-        "$or":[
-            {"caller": user},
-            {"callee": user}
-        ]
+            {"caller": user}
     }
 
     calls = Calls.find(calls_query).sort("call_date")
