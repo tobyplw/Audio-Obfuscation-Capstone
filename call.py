@@ -174,8 +174,8 @@ def talk(record_stream, callee_username, user, call_session):
                 #call_session.audio_data.put(audio_np_int16.tobytes())
                 if not user.obfuscation_on.is_set():
                     pcm_data = voc.float2pcm(orig_data)
-                    data = pcm_data.tobytes('C')
-                    call_session.audio_data.put(data)
+                    clear_data = pcm_data.tobytes('C')
+                    call_session.audio_data.put(clear_data)
                 else:
                     call_session.audio_data.put(data)
             # print(call_session.audio_data.qsize())
