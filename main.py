@@ -702,22 +702,32 @@ logs_label.pack(pady=20, padx=20)
 back_button_logs = ctk.CTkButton(logs_frame, text="Back to Main", command=lambda: raise_frame(main_frame))
 back_button_logs.pack(pady=20, padx=20)
 
-# Modify the Logs Frame to include the sample logs table
+def open_transcript_window(transcript):
+    transcript_window = Toplevel(app)
+    transcript_window.title("Call Transcript")
+    transcript_window.geometry("500x300")  # Set a reasonable size for the transcript window
+
+    transcript_text = tk.Text(transcript_window, wrap='word', height=15)
+    transcript_text.pack(padx=10, pady=10, fill='both', expand=True)
+
+    transcript_text.insert('end', transcript)
+    transcript_text.config(state='disabled')  # Make the text widget read-only
+
+    # Add a scrollbar
+    scrollbar = ttk.Scrollbar(transcript_window, command=transcript_text.yview)
+    scrollbar.pack(side='right', fill='y')
+    transcript_text.config(yscrollcommand=scrollbar.set)
 
 #Set this up to be window so that its not hardcoded
 def setup_logs_frame(username):
-    # Create the Treeview widget for displaying the table within logs_frame
     logs_table = ttk.Treeview(logs_frame, height=10)
     logs_table.pack(expand=True, fill='both', side='top')
 
-    # Define the columns
-    logs_table['columns'] = ('callID', 'callDate', 'caller',  'callee',  'call_transcript')
-
-    # Format the columns
-    logs_table.column("#0", width=0, stretch=tk.NO)  # Phantom column
+    # Define and format the columns
+    logs_table['columns'] = ('callID', 'callDate', 'caller', 'callee', 'call_transcript')
+    logs_table.column("#0", width=0, stretch=tk.NO)
     logs_table.column("callID", anchor=tk.W, width=40)
     logs_table.column("callDate", anchor=tk.W, width=120)
-    #logs_table.column("call_duration", anchor=tk.W, width=80)
     logs_table.column("caller", anchor=tk.W, width=120)
     logs_table.column("callee", anchor=tk.W, width=120)
     logs_table.column("call_transcript", anchor=tk.W, width=400)
@@ -725,18 +735,35 @@ def setup_logs_frame(username):
     # Create Headings
     logs_table.heading("#0", text="", anchor=tk.W)
     logs_table.heading("callID", text="Call ID", anchor=tk.W)
+    logs_table.heading("callDate", text="Call Date", anchor=tk.W)
     logs_table.heading("caller", text="Caller", anchor=tk.W)
     logs_table.heading("callee", text="Callee", anchor=tk.W)
-    logs_table.heading("callDate", text="Call Date", anchor=tk.W)
-    #logs_table.column("call_duration", text="Duration", anchor=tk.W)
     logs_table.heading("call_transcript", text="Call Recording", anchor=tk.W)
 
-    #CHANGE THE USERNAME HERE
-    print("Current user is " +  username + ".")
-    for log in database.get_calls(username):
-        logs_table.insert(parent='', index='end', iid=log[0], text="", values=log)
+    # Fetch the call logs from the database
+    call_logs = database.get_calls(username)
 
-# Call the setup_logs_frame function to initialize the logs table when the app starts
+    # Create a dictionary to store transcripts for later access
+    transcripts_dict = {}
+
+    for call_log in call_logs:
+        logs_table.insert("", 'end', iid=call_log[0], text="", values=(
+            call_log[0],  # Call ID
+            call_log[1],  # Caller
+            call_log[2],  # Callee
+            call_log[3],  # Formatting date as string
+            "Click to view transcript"  # Placeholder text*
+        ))
+        transcripts_dict[call_log[0]] = call_log[4]  # Store actual transcript
+
+    # Define an event handler for row clicks that opens the transcript window
+    def on_row_click(event):
+        item_id = logs_table.selection()[0]
+        transcript = transcripts_dict[item_id]  # Fetch the actual transcript from the dictionary
+        open_transcript_window(transcript)
+
+    logs_table.bind("<Double-1>", on_row_click)
+
 
 # Function to handle the sign-in process (placeholder for actual functionality)
 def sign_in():
