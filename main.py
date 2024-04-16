@@ -301,15 +301,15 @@ navigate_settings_button.pack(pady=10)
 
 
 
-def sign_out():
-    username_entry.delete(0, tk.END)
-    password_entry.delete(0, tk.END)
+# def sign_out():
+#     username_entry.delete(0, tk.END)
+#     password_entry.delete(0, tk.END)
 
-    raise_frame(log_in_frame)
+#     raise_frame(log_in_frame)
 
 # Update the command for the sign_out_button to use the sign_out function
-sign_out_button = ctk.CTkButton(main_frame_content, text="Sign Out", command=sign_out)
-sign_out_button.pack(pady=(10, 20), padx=20, anchor='e')
+# sign_out_button = ctk.CTkButton(main_frame_content, text="Sign Out", command=sign_out)
+# sign_out_button.pack(pady=(10, 20), padx=20, anchor='e')
 
 
 # Settings Frame Content
@@ -378,9 +378,6 @@ spoken_label.pack(padx=20)
 combobox_spoken = ctk.CTkOptionMenu(settings_frame, values=list(LANGUAGES.keys()), command=spoken_language_callback, width=200)
 combobox_spoken.set("English")
 combobox_spoken.pack(pady=10)
-
-# Initialize Start Recording Button but don't pack it initially
-start_recording_button = ctk.CTkButton(call_frame, text="Start Recording", command=start_recording)
 
 def update_input_devices_combobox():
     global comboboxin, device_name_to_info_mapping
