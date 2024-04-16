@@ -378,7 +378,7 @@ def update_input_devices_combobox():
     output_label.pack(pady=(30,20) , padx=20)
     comboboxin.pack(pady=10)
     comboboxin.set(device_names[0])  # Optionally set a default value
-    User.input_device = device_names[0]
+    user.input_device = input_device_name_to_info_mapping[device_names[0]]
 
 def update_output_devices_combobox():
     global comboboxout, output_device_name_to_info_mapping
@@ -394,7 +394,7 @@ def update_output_devices_combobox():
     comboboxout = ctk.CTkOptionMenu(settings_frame, values=device_names, height=40, width=200, command=comboboxout_callback)
     comboboxout.pack(pady=10)
     comboboxout.set(device_names[0])  # Optionally set a default value
-    User.output_device = device_names[0]
+    user.output_device = output_device_name_to_info_mapping[device_names[0]]
     # Back button in settings frame to return to main frame
     back_button_settings = ctk.CTkButton(settings_frame, text="Back to Main", command=lambda: raise_frame(main_frame))
     back_button_settings.pack(pady=20)
