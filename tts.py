@@ -25,14 +25,12 @@ output_device_index = 4
 def send_streaming_audio(payload, call_session):
     print("In SYNTHESIZE")
     print(payload)
-    buffer = []
-    min_buffer_size = 256 * 1024  # Minimum bytes to accumulate before playback
-    buffered = False
     # Stream the audio as you get it and play it
     with requests.post(DEEPGRAM_URL, stream=True, headers=headers, json=payload) as r:
         for chunk in r.iter_content(chunk_size=512):
             if chunk:
                 #print("adding Chunk")
+                #if len(chunk) == 512:
                 call_session.obfuscation_queue.put(chunk)
 
     # After the loop ends, there might still be data left in the buffer that hasn't been played yet.

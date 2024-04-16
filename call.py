@@ -155,10 +155,6 @@ def talk(record_stream, callee_username, user, call_session):
     print("Sending audio to " + call_session.destination_ip)
     try:
         while not call_session.call_end.is_set():
-
-            current_time_ms = int(time.time() * 1000) % (1 << 32)
-            rtp_header = utilities.create_rtp_header(call_session.get_sequence_number(), current_time_ms, call_session.ssrc, payload_type = 0)
-
            
             raw_data = record_stream.read(CHUNK_SIZE_TALK, exception_on_overflow=False)
             in_data = np.frombuffer(raw_data, dtype=np.float32)
@@ -181,12 +177,22 @@ def talk(record_stream, callee_username, user, call_session):
                     #print("In TTS Mode")
                     try:
                         data = call_session.obfuscation_queue.get(timeout = 0.01)
+                        if data:
+                            current_time_ms = int(time.time() * 1000) % (1 << 32)
+                            rtp_header = utilities.create_rtp_header(call_session.get_sequence_number(), current_time_ms, call_session.ssrc, payload_type = 0)
+                            packet = rtp_header + data
+                            # Check if microphone is muted
+                            srtp = call_session.tx_session.protect(packet)
+                            user.client_socket.sendto(srtp, (call_session.destination_ip, call_session.destination_port))
                     except queue.Empty:
                         continue
-                packet = rtp_header + data
-            # Check if microphone is muted
-                srtp = call_session.tx_session.protect(packet)
-                user.client_socket.sendto(srtp, (call_session.destination_ip, call_session.destination_port))
+                else:
+                    current_time_ms = int(time.time() * 1000) % (1 << 32)
+                    rtp_header = utilities.create_rtp_header(call_session.get_sequence_number(), current_time_ms, call_session.ssrc, payload_type = 0)
+                    packet = rtp_header + data
+                # Check if microphone is muted
+                    srtp = call_session.tx_session.protect(packet)
+                    user.client_socket.sendto(srtp, (call_session.destination_ip, call_session.destination_port))
             else:
                 # If muted, you might want to do something (like sending silence or just skipping)
                 pass
