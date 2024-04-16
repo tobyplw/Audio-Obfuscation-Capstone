@@ -97,7 +97,7 @@ class CallSession:
             self.transcriptions[id_speaker] = sentence
 
             if is_final:
-                self.add_to_log({key: sentence}, True)
+                self.add_to_log({key: sentence}, external = True)
 
         if (user.transcription_on.is_set()):
             self.update_transcription_textbox(self.print_transcriptions())
@@ -105,13 +105,14 @@ class CallSession:
 
 
     def add_to_log(self, transcriptions, external):
-        for speaker, words in transcriptions.items():
+        for speaker, sentence in transcriptions.items():
             if external:
-                self.call_log += "[External Speaker" + str(speaker) + "]"
+                self.call_log += "[External Speaker" + str(speaker) + "] "
+                self.call_log += sentence
             else:
-                self.call_log += "[Speaker" + str(speaker) + "]"
-            for word in words:
-                self.call_log += " " + word
+                self.call_log += "[Speaker" + str(speaker) + "] "
+                for word in sentence:
+                    self.call_log += " " + word
             self.call_log += "  {" + str(time.time()) + "}\n"
 
 

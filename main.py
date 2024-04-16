@@ -477,7 +477,7 @@ def hang_up_call(window, call_session):
         print("output stream closed")
 
     #log transcript
-    print(call_session.transcriptions)
+    print(call_session.call_log)
     #database.log_call(call_session.caller, call_session.callee, 5, call_session.transcriptions)
 
     call_session.call_end.clear()
