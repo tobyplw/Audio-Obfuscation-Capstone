@@ -252,7 +252,7 @@ logs_frame = ctk.CTkFrame(app)  # Frame for logs
 settings_frame = ctk.CTkFrame(app)  # Create settings frame
 
 
-for frame in (log_in_frame, sign_up_frame, main_frame, call_frame, logs_frame, transcribe_frame, settings_frame):
+for frame in (log_in_frame, sign_up_frame, main_frame, call_frame, logs_frame, settings_frame):
     frame.grid(row=0, column=0, sticky='nsew')
 
 # Define clock font settings with the correct parameters for customtkinter
