@@ -175,23 +175,23 @@ class Vocoder:
 
 
     def audio_effects(self, data):
-        data = self.comp.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
-        data = self.gain.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
-        data = self.distort.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
+        # data = self.comp.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
+        # data = self.gain.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
+        # data = self.distort.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
         data = self.pitch.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
-        # pitch = self.sine_wave()
-        # print(pitch)
-        # self.pitch = PitchShift(semitones=pitch)
+        # # pitch = self.sine_wave()
+        # # print(pitch)
+        # # self.pitch = PitchShift(semitones=pitch)
 
-        data = self.reverb.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
-        data = self.gate.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
-        #data = self.bitcrush.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
-        #data = self.chorus.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
-        #data = self.phone.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
-        #data = self.ladder.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
-        #self.phaser.depth = random.randrange(-5, 5, 1)
-        #data = self.phaser.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
-        #data = self.pedalboard.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
+        # data = self.reverb.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
+        # data = self.gate.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
+        # #data = self.bitcrush.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
+        # #data = self.chorus.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
+        # #data = self.phone.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
+        # #data = self.ladder.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
+        # #self.phaser.depth = random.randrange(-5, 5, 1)
+        # #data = self.phaser.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
+        # #data = self.pedalboard.process(input_array = data, sample_rate = self.rate, buffer_size = self.chunk)
         return data
 
 

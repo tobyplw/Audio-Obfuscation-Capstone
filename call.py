@@ -14,6 +14,7 @@ import database as db
 import utilities
 import json
 from classes import CallSession
+import queue
 
 DEBUG = 0
 # CONSTANTS FOR PyAudio
@@ -144,27 +145,6 @@ def incoming_buffer(buffer, rtp, seq_number, time_delta = 0):
         buffer[seq_number] = rtp
         return None
 
-def talk_transcribe(record_stream, call_session):
-
-    try:
-        MAX_QUEUE_SIZE = 100  # Example maximum size
-
-        while not call_session.call_end.is_set():
-            raw_data = record_stream.read(CHUNK_SIZE_TALK, exception_on_overflow=False)
-            in_data = np.frombuffer(raw_data, dtype=np.float32)
-            scaled_data = np.int16(in_data * 32767).tobytes()
-
-            if call_session.audio_data.qsize() < MAX_QUEUE_SIZE:
-                call_session.audio_data.put(scaled_data)
-            else:
-                # Optionally handle the situation when data is being dropped, e.g., logging
-                print("Dropping data to avoid overflow")
-
-
-    except KeyboardInterrupt:
-        record_stream.close()
-    
-    print("Talk Ending")
 
 def talk(record_stream, callee_username, user, call_session):
     
@@ -175,8 +155,7 @@ def talk(record_stream, callee_username, user, call_session):
     print("Sending audio to " + call_session.destination_ip)
     try:
         while not call_session.call_end.is_set():
-            current_time_ms = int(time.time() * 1000) % (1 << 32)
-            rtp_header = utilities.create_rtp_header(call_session.get_sequence_number(), current_time_ms, call_session.ssrc, payload_type = 0)
+           
             raw_data = record_stream.read(CHUNK_SIZE_TALK, exception_on_overflow=False)
             in_data = np.frombuffer(raw_data, dtype=np.float32)
             
@@ -186,17 +165,34 @@ def talk(record_stream, callee_username, user, call_session):
             pcm_data = voc.float2pcm(in_data)
             data = pcm_data.tobytes('C')
 
-            audio_np_int16 = (in_data * 32767).astype(np.int16)
+            #audio_np_int16 = (in_data * 32767).astype(np.int16)
 
             if not user.is_muted:
-                call_session.audio_data.put(audio_np_int16.tobytes())
+                #call_session.audio_data.put(audio_np_int16.tobytes())
+                call_session.audio_data.put(data)
             # print(call_session.audio_data.qsize())
             # print(call_session.audio_data)
-                packet = rtp_header + data
-
-            # Check if microphone is muted
-                srtp = call_session.tx_session.protect(packet)
-                user.client_socket.sendto(srtp, (call_session.destination_ip, call_session.destination_port))
+                
+                if user.tts_on.is_set():
+                    #print("In TTS Mode")
+                    try:
+                        data = call_session.obfuscation_queue.get(timeout = 0.01)
+                        if data:
+                            current_time_ms = int(time.time() * 1000) % (1 << 32)
+                            rtp_header = utilities.create_rtp_header(call_session.get_sequence_number(), current_time_ms, call_session.ssrc, payload_type = 0)
+                            packet = rtp_header + data
+                            # Check if microphone is muted
+                            srtp = call_session.tx_session.protect(packet)
+                            user.client_socket.sendto(srtp, (call_session.destination_ip, call_session.destination_port))
+                    except queue.Empty:
+                        continue
+                else:
+                    current_time_ms = int(time.time() * 1000) % (1 << 32)
+                    rtp_header = utilities.create_rtp_header(call_session.get_sequence_number(), current_time_ms, call_session.ssrc, payload_type = 0)
+                    packet = rtp_header + data
+                # Check if microphone is muted
+                    srtp = call_session.tx_session.protect(packet)
+                    user.client_socket.sendto(srtp, (call_session.destination_ip, call_session.destination_port))
             else:
                 # If muted, you might want to do something (like sending silence or just skipping)
                 pass
