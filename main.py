@@ -573,6 +573,10 @@ def open_call_window(callee_username, call_session):
                                 corner_radius=40, 
                                 fg_color="white", 
                                 command=transcribe_toggle)
+
+    tts_image = Image.open("assets/tts.png")
+    tts_photo = ctk.CTkImage(tts_image, size=(40,40))
+    
     tts_button = ctk.CTkButton(buttons_frame, 
                                 image=tts_photo, 
                                 text="", 

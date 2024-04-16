@@ -9,6 +9,7 @@ import queue
 import time
 import datetime
 from googletrans import Translator
+from tts import synthesize_text
 
 
 
@@ -32,6 +33,7 @@ class CallSession:
         self.call_end = Event()
         self.audio_data = queue.Queue()
         self.transcription_queue = queue.Queue()
+        self.obfuscation_queue = queue.Queue()
         # Callbacks
         self.update_transcription_textbox = on_transcribe_callback
         self.on_mute_callback = on_mute_callback
@@ -165,6 +167,17 @@ class CallSession:
         seconds = total_seconds % 60
         
         return f"{hours}h {minutes}m {seconds}s"
+
+    
+    def determine_TTS(self, message):
+        if message['is_final']:
+            sentence = message['text']
+            text = ""
+            for word in sentence:
+                text += word
+            synthesize_text(text, self)
+
+
     
 
 class User:
