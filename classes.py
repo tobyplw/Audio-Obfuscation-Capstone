@@ -170,11 +170,11 @@ class CallSession:
 
     
     def determine_TTS(self, message):
-        if message['is_final']:
-            sentence = message['text']
-            text = ""
+        print("In Determine")
+        text = ""
+        for key, sentence in message.items():
             for word in sentence:
-                text += word
+                text +=  word + " "
             synthesize_text(text, self)
 
 
