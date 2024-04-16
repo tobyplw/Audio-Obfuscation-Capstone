@@ -470,8 +470,8 @@ def open_call_window(callee_username, call_session):
 
     def obfuscate_toggle():
         if user.obfuscation_on.is_set():
-            obfuscate_button.configure(fg_color='#7D7D7D')
-            obfuscate_button.configure(hover_color='white')
+            obfuscate_button.configure(fg_color='white')
+            obfuscate_button.configure(hover_color='#7D7D7D')
             obfuscate_button.configure(image=obfuscate_photo)
             user.obfuscation_on.clear()
             show_message("Voice now obfuscated")  # Display unobfuscate message
@@ -583,7 +583,7 @@ def open_call_window(callee_username, call_session):
                                 height=40, 
                                 width=40, 
                                 corner_radius=40, 
-                                fg_color='blue', 
+                                fg_color='white', 
                                 command=obfuscate_toggle)
     # obfuscate_button.pack(side="left", padx=10)
     
