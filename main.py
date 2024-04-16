@@ -480,7 +480,7 @@ def hang_up_call(window, call_session):
     #log transcript
     call_session.end_time = time.time()
     print(call_session.call_log)
-    database.log_call(call_session.caller, call_session.callee, call_session.call_date, call_session.call_duration(), call_session.transcriptions)
+    database.log_call(call_session.caller, call_session.callee, call_session.call_date, call_session.call_duration(), call_session.call_log)
 
 
     call_session.call_end.clear()
