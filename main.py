@@ -164,7 +164,7 @@ def handle_call(destination_ip, destination_port, callee_username, user):
     input_stream, output_stream = call.start_audio_stream(user.input_device, user.output_device, audio)
     start_call_thread = threading.Thread(target=call.talk, args=(input_stream,callee_username, user, call_session), daemon=True)
 
-    listen_call_thread = threading.Thread(target=call.listen, args=(user, output_stream, hang_up_button, call_session),daemon=True)
+    listen_call_thread = threading.Thread(target=call.listen, args=(output_stream, user, hang_up_button, call_session),daemon=True)
 
     transcription_send_thread = Thread(target=start_speech_to_text_transcription, args=(user.transcription_on, user, call_session),daemon=True)
     transcription_send_thread.start()
