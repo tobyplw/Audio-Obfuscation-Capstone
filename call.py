@@ -90,6 +90,23 @@ def get_user_output():
 
 
 def incoming_buffer(buffer, rtp, seq_number, time_delta = 0):
+    """
+    Puts packets arriving in the correct order.
+    Parameters
+    ----------
+    buffer : dictionary
+        Stores packets in correct order
+    rtp : pylibsrtp object
+        Encrypts and decrypts packets
+    seq_number : int
+        Identifies packet order
+    time_delta : int
+        Check if the delay or difference in time between packet arrivals is beyond a certain allowable threshold
+    Returns
+    -------
+    packet : byte object
+        Packet that is in correct order
+    """
     allowed_time = 100
     if (len(buffer) >= BUFFER_SIZE) or (time_delta > allowed_time):
         keys = buffer.keys()
@@ -98,6 +115,7 @@ def incoming_buffer(buffer, rtp, seq_number, time_delta = 0):
             if num < lowest_num:
                 lowest_num = num
         packet = buffer[lowest_num]
+        print(packet)
         del buffer[lowest_num]
         buffer[seq_number] = rtp
         return packet
