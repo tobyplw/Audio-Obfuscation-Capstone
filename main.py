@@ -182,7 +182,7 @@ def handle_call(destination_ip, destination_port, callee_username, user):
     # Initialize audio streams for input and output using the user's device settings.
     input_stream, output_stream = call.start_audio_stream(user.input_device, user.output_device, audio)
     # Set up and start a thread for sending audio data.
-    start_call_thread = threading.Thread(target=call.talk, args=(input_stream,callee_username, user, call_session), daemon=True)
+    start_call_thread = threading.Thread(target=call.talk, args=(input_stream, user, call_session), daemon=True)
     # Set up and start a thread for receiving audio data.
     listen_call_thread = threading.Thread(target=call.listen, args=(output_stream, user, hang_up_button, call_session),daemon=True)
     # If transcription is enabled, set up and start a thread for speech-to-text transcription.

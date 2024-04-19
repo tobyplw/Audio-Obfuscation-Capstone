@@ -115,7 +115,6 @@ def incoming_buffer(buffer, rtp, seq_number, time_delta = 0):
             if num < lowest_num:
                 lowest_num = num
         packet = buffer[lowest_num]
-        print(packet)
         del buffer[lowest_num]
         buffer[seq_number] = rtp
         return packet

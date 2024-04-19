@@ -11,8 +11,6 @@ import datetime
 from googletrans import Translator
 from tts import synthesize_text
 
-
-
 translator = Translator()
 
 class CallSession:
