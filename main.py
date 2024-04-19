@@ -59,9 +59,9 @@ LANGUAGES = {
     'Ukrainian' : 'uk',
     'Vietnamese' : 'vi'
 }
-
+# Import the Translator class for language translation functionalities.
 translator = Translator()
-
+# Initialize global variables for tracking the last spoken words, and device mappings.
 global last_words
 last_words = ""
 global input_device_name_to_info_mapping
@@ -70,62 +70,74 @@ input_device_name_to_info_mapping = {}
 global output_device_name_to_info_mapping
 output_device_name_to_info_mapping = {}
 
+# Initialize global variables for audio streams and threading.
 global input_stream, output_stream, audio, start_call_thread, listen_call_thread
 input_stream = None
 output_stream = None
-audio = pyaudio.PyAudio()
+audio = pyaudio.PyAudio() # Initialize the PyAudio object to manage audio.
 
 global hang_up_button
 hang_up_button = None
 def check_NAT():
+    # Attempt to determine the type of NAT used by making an STUN request.
     try:
         nat_type, external_ip, external_port = stun.get_ip_info()
         print("Nat Type: " + str(nat_type))
+        # Warn if detected NAT type may hinder service functionality.
         if nat_type == "Symmetric NAT":
             print("NAT is Symmetric. This service may not work")
     except:
+        # Silently ignore any exceptions that occur during the NAT check.
         pass
 
 def get_internal_address():
+    # Initially, try to obtain the internal IP and port from the client socket.
     internal_ip, internal_port = user.client_socket.getsockname()
+    # Re-attempt obtaining the internal IP using hostname resolution for reliability.
     internal_ip = socket.gethostbyname(socket.gethostname()) #sometimes the first one gets the wrong internal ip or something
     return internal_ip, internal_port
 
 def server_connection():
+    # Start the process of connecting to an external server and continuously polling it.
     print("Connecting to external server...")
-    check_NAT()
+    check_NAT() # Check for any NAT issues that may affect connectivity.
     poll_time = 0
+    # Retrieve and store the internal IP and port.
     internal_ip, internal_port = get_internal_address()
     while True:
         time.sleep(.5)
         curr_time = time.time()
+        # Send a polling message to the server at the configured intervals.
         if curr_time > poll_time + server.poll_time:
             poll_time = curr_time
             message = {"Action" : "Poll", "From_Username" : user.username, "Internal_IP" : internal_ip, "Internal_Port" : internal_port, "Time" : time.time()}
             user.client_socket.sendto(json.dumps(message).encode(), (server.get_server_host(), server.get_server_port()))
 
-
 def send_call_message(user_input):
+    # Notify the user and send a call initiation message to the specified username.
     print("Calling ", user_input)
     message = {"Action" : "Calling","From_Username" : user.username, "To_Username" : user_input, "Time" : time.time()}
     user.client_socket.sendto(json.dumps(message).encode(), (server.get_server_host(), server.get_server_port()))
 
-
 def recieve_messages():
+    # Continuously listen for messages from the server while not in an active call.
     while True:
         time.sleep(0.1)
         if not user.in_call.is_set():
             data = None
             try:
+                # Attempt to receive a message.
                 data, server_address = user.client_socket.recvfrom(1024)
             except BlockingIOError:
+                # Ignore blocking IO errors typically caused by non-blocking sockets.
                 pass
             if data is not None:
                 try:
+                    # Decode and process the JSON message received.
                     inc_message = json.loads(data.decode())
                     print("Recieved message: " + str(inc_message))
                     action = inc_message["Action"]
-
+                    # Determine the type of action and handle accordingly.
                     if action == "POKE":
                         callee_username = inc_message["From_Username"]
                         incoming_call_request(callee_username)
@@ -142,8 +154,8 @@ def recieve_messages():
                         callee_username = inc_message["To_Username"]
                         print(f"{callee_username} Declined Your Call")
                 except UnicodeDecodeError as e: #this occurs for leftover packets from the audio stream
+                    # Handle decode errors silently, typically caused by non-text data in the stream.
                     pass
-
 
 def handle_error_message(callee_username):
     # add these messages to gui interface
@@ -152,30 +164,36 @@ def handle_error_message(callee_username):
     pass
 
 def handle_call(destination_ip, destination_port, callee_username, user):
+    # Set up global variables to manage audio streams and threads for call operations.
     global input_stream, output_stream, start_call_thread, listen_call_thread
+    # Initialize a new call session with empty IP and port which will be updated shortly.
     call_session = CallSession('', '')
+    # Record the start time of the call.
     call_session.start_time = time.time()
+    # Set the caller and callee usernames.
     call_session.caller = user.username
     call_session.callee = callee_username
+    # Set the destination IP and port for the call.
     call_session.destination_ip = destination_ip
     call_session.destination_port = destination_port
 
+    # Open a UI window to manage the call, showing details of the callee and session.
     open_call_window(callee_username, call_session)
+    # Initialize audio streams for input and output using the user's device settings.
     input_stream, output_stream = call.start_audio_stream(user.input_device, user.output_device, audio)
+    # Set up and start a thread for sending audio data.
     start_call_thread = threading.Thread(target=call.talk, args=(input_stream,callee_username, user, call_session), daemon=True)
-
+    # Set up and start a thread for receiving audio data.
     listen_call_thread = threading.Thread(target=call.listen, args=(output_stream, user, hang_up_button, call_session),daemon=True)
-
+    # If transcription is enabled, set up and start a thread for speech-to-text transcription.
     transcription_send_thread = Thread(target=start_speech_to_text_transcription, args=(user.transcription_on, user, call_session),daemon=True)
     transcription_send_thread.start()
-
+    # Begin monitoring and updating the call transcription if enabled.
     call_session.start_transcription_listen_thread(user)
 
-    
+    # Start the audio communication threads.
     start_call_thread.start()
     listen_call_thread.start()
-    # start_sending_transcriptions()
-
 
 def incoming_call_request(callee_username):
     #create box and wait for input
@@ -197,15 +215,15 @@ def incoming_call_request(callee_username):
         message = {"Action" : "Decline", "From_Username" : user.username, "To_Username" : callee_username,  "Time" : time.time()}
         user.client_socket.sendto(json.dumps(message).encode(), (server.get_server_host(), server.get_server_port()))
 
-
 def connect_with_server():
+    # Configure the user's client socket for non-blocking network communication.
     user.client_socket.bind(('0.0.0.0', 0))
     user.client_socket.setblocking(0)
+    # Set up and start threads for continuous server polling and message receiving.
     server_polling_thread = threading.Thread(target=server_connection,daemon=True)
     server_responding_thread = threading.Thread(target=recieve_messages,daemon=True)
     server_polling_thread.start()
     server_responding_thread.start()
-
 
 # Initialize the main application window
 app = ctk.CTk()
@@ -236,13 +254,6 @@ def update_clock():
 def raise_frame(frame):
     frame.tkraise()
 
-# Function to simulate starting the recording (placeholder for actual functionality)
-def start_recording():
-    # print("Recording started...")  # Placeholder print statement
-    messagebox.showinfo("Call Authenticated", f"Recording In Progress")
-    # Implement the actual recording functionality later
-    # Optional: Show a dialog box as feedback
-
 # Create frames for each page
 log_in_frame = ctk.CTkFrame(app, fg_color= 'transparent')
 sign_up_frame = ctk.CTkFrame(app)
@@ -251,8 +262,9 @@ call_frame = ctk.CTkFrame(app)
 logs_frame = ctk.CTkFrame(app)  # Frame for logs
 settings_frame = ctk.CTkFrame(app)  # Create settings frame
 
-
+# Loop through each frame involved in the UI to configure their layout properties uniformly.
 for frame in (log_in_frame, sign_up_frame, main_frame, call_frame, logs_frame, settings_frame):
+    # Place each frame in the same grid position, making them stack and switchable.
     frame.grid(row=0, column=0, sticky='nsew')
 
 # Define clock font settings with the correct parameters for customtkinter
@@ -263,7 +275,9 @@ clock_font_size = 120  # Font size
 
 # Main Frame Content
 
+# Create a content frame within the main frame with a transparent background for visual appeal.
 main_frame_content = ctk.CTkFrame(main_frame, fg_color='transparent')
+# Pack the content frame with padding, allowing it to expand to fill space.
 main_frame_content.pack(pady=20, padx=20, expand=True)
 
 # Load the sponsor's logo image
@@ -288,34 +302,25 @@ button_frame.pack(expand=True)
 def on_start_call_button_clicked():
     raise_frame(call_frame)  # Show the call frame
 
-
+# Create a 'Start Call' button within a predefined button frame, linking it to the event handler for click.
 start_call_button = ctk.CTkButton(button_frame, text="Start Call", command=on_start_call_button_clicked, width=200, height=40)
 start_call_button.pack(side='left', padx=10, pady=10, anchor='center')
-
+# Create an 'Access Logs' button, also within the button frame, to switch to the logs frame when clicked.
 access_logs_button = ctk.CTkButton(button_frame, text="Access Logs", command=lambda: raise_frame(logs_frame), width=200, height=40)
 access_logs_button.pack(side='left', padx=10, pady=10, anchor='center')
-
-
+# Create a 'Settings' button in the main content frame to navigate to the settings frame.
 navigate_settings_button = ctk.CTkButton(main_frame_content, text="Settings", command=lambda: raise_frame(settings_frame), width=200, height=40, fg_color='grey', hover_color='#6f6e70')
 navigate_settings_button.pack(pady=10)
 
 
 
-# def sign_out():
-#     username_entry.delete(0, tk.END)
-#     password_entry.delete(0, tk.END)
-
-#     raise_frame(log_in_frame)
-
-# Update the command for the sign_out_button to use the sign_out function
-# sign_out_button = ctk.CTkButton(main_frame_content, text="Sign Out", command=sign_out)
-# sign_out_button.pack(pady=(10, 20), padx=20, anchor='e')
-
-
 # Settings Frame Content
+
+# Add a label for settings on the settings frame, styled with a custom font.
 settings_label = ctk.CTkLabel(settings_frame, text="Settings", font=(clock_font_family, 35))
 settings_label.pack(pady=20)
 
+# Define functions to switch between light and dark UI themes.
 def switch_to_light_mode():
     ctk.set_appearance_mode('light')  # Set the appearance to light mode
     light_button.configure(text='Dark Mode', command=switch_to_dark_mode)  # Update button to switch to dark mode next
@@ -324,21 +329,23 @@ def switch_to_dark_mode():
     ctk.set_appearance_mode('dark')  # Set the appearance to dark mode
     light_button.configure(text='Light Mode', command=switch_to_light_mode)  # Update button to switch to light mode next
 
+# Initialize the appearance toggle button with appropriate mode settings.
 def initialize_button():
     global light_button
     light_button = ctk.CTkButton(settings_frame, text='Light Mode', command=switch_to_light_mode, width=200, height=40)
     light_button.pack(padx=10, pady=10)
 
-    # Set the initial mode; you can use a function to load a saved preference if applicable
+    # Check and apply the initial appearance mode based on user settings or defaults.
     initial_mode = ctk.get_appearance_mode()
     if initial_mode == 'light':
         switch_to_light_mode()
     else:
         switch_to_dark_mode()
-
+# Call the function to set up the theme toggle button on UI load.
 initialize_button()
-
+# Callback function definitions for handling input and output device selections.
 def comboboxin_callback(choice):
+    # If the selected device is mapped, update the user's input device preference and save settings.
     if choice in input_device_name_to_info_mapping:
         user.input_device = input_device_name_to_info_mapping[choice]
         database.save_settings(user.username, choice, user.output_device)
@@ -347,11 +354,13 @@ def comboboxin_callback(choice):
         print("Selected device not found in mapping.")
 
 def comboboxout_callback(choice):
+    # Similar to input, update and save the output device preference if mapped.
     if choice in output_device_name_to_info_mapping:
         user.output_device = output_device_name_to_info_mapping[choice]
         database.save_settings(user.username, user.input_device, choice)
         print(f"Device selected: {user.output_device}")
 
+# Add a label to the settings frame for user languages configuration.
 translation_label = ctk.CTkLabel(settings_frame, text="User Languages:", font=("Arial", 22))
 translation_label.pack(pady=(30,20) , padx=20)
 
@@ -380,6 +389,7 @@ combobox_spoken.set("English")
 combobox_spoken.pack(pady=10)
 
 def update_input_devices_combobox():
+    # Access global variables for combobox and device mapping.
     global comboboxin, device_name_to_info_mapping
     input_devices = get_user_input()
     device_names = [device['name'] for device in input_devices]  # Extract device names
@@ -400,7 +410,9 @@ def update_input_devices_combobox():
     user.input_device = input_device_name_to_info_mapping[device_names[0]]
 
 def update_output_devices_combobox():
+    # Access global variables for combobox and device mapping.
     global comboboxout, output_device_name_to_info_mapping
+    # Fetch the list of output devices.
     output_devices = get_user_output()
     device_names = [device['name'] for device in output_devices]  # Extract device names
     update_output_device_name_to_info_mapping(output_devices)  # Update the mapping
@@ -411,7 +423,7 @@ def update_output_devices_combobox():
 
     # Recreate the combobox with the new values
     comboboxout = ctk.CTkOptionMenu(settings_frame, values=device_names, height=40, width=200, command=comboboxout_callback)
-    output_label = ctk.CTkLabel(settings_frame, text="Input Device:", font=("Arial", 15))
+    output_label = ctk.CTkLabel(settings_frame, text="Output Device:", font=("Arial", 15))
     output_label.pack(padx=20)
     comboboxout.pack(pady=10)
     comboboxout.set(device_names[0])  # Optionally set a default value
@@ -421,11 +433,13 @@ def update_output_devices_combobox():
     back_button_settings.pack(pady=20)
 
 def update_input_device_name_to_info_mapping(devices):
+    # Update the mapping dictionary for input devices with new data.
     global input_device_name_to_info_mapping
     for device in devices:
         input_device_name_to_info_mapping[device['name']] = device
 
 def update_output_device_name_to_info_mapping(devices):
+    # Update the mapping dictionary for output devices with new data.
     global output_device_name_to_info_mapping
     for device in devices:
         output_device_name_to_info_mapping[device['name']] = device
@@ -440,29 +454,34 @@ call_label.pack(pady=(30,20) , padx=20)
 callee_id_entry = ctk.CTkEntry(call_frame)
 callee_id_entry.pack(pady=10, padx=20)
 
+# A function to configure and display the call window.
 def open_call_window(callee_username, call_session):
+    # Declare global to modify the hang-up button across function calls.
     global hang_up_button
+
+    # Define a function to mute the user's microphone.
     def mute_on():
         user.is_muted = True
         mute_button.configure(fg_color='red')
         mute_button.configure(hover_color='red')
         mute_button.configure(image=mute_photo)
         mute_button.configure(command=mute_off)
+    # Define a function to unmute the user's microphone.
     def mute_off():
         user.is_muted = False
         mute_button.configure(fg_color='white')
         mute_button.configure(hover_color='white')
         mute_button.configure(image=unmute_photo)
         mute_button.configure(command=mute_on)
-
+    # Define a function to display a temporary message at the bottom of the call window.
     def show_message(message):
         obfuscate_display_label.configure(text=message)
         obfuscate_display_label.pack(side='bottom', fill='x', padx=10, pady=5)
-
+    # Define a function to hide the temporary message from the call window.
     def hide_message():
         obfuscate_display_label.pack_forget()
 
-
+    # Define a function to toggle voice obfuscation.
     def obfuscate_toggle():
         if user.obfuscation_on.is_set():
             # Configurations when turning off obfuscation
@@ -475,32 +494,33 @@ def open_call_window(callee_username, call_session):
             user.obfuscation_on.set()
             show_message("Voice now unobfuscated")  # Show this message while obfuscated
 
-
+    # Define a function to toggle the transcription feature on and off.
     def transcribe_toggle():
         if user.transcription_on.is_set():
             user.transcription_on.clear()
         else:
             user.transcription_on.set()
-
+    # Define a function to toggle the text-to-speech feature.
     def tts_toggle():
         if user.tts_on.is_set():
             user.tts_on.clear()
         else:
             user.tts_on.set()
 
-
+    # Initialize the call window.
     call_window = Toplevel(app)
     call_window.title("Call")
     call_window.geometry("1400x740")
     call_window.configure(bg="#333333")  # Light gray background
-
+    # Initialize a label to display obfuscation status, initially hidden.
     obfuscate_display_label = ctk.CTkLabel(call_window, text="", height=20)  # main_frame should be your main GUI frame
     obfuscate_display_label.pack_forget()  # Start with the label hidden
-
+    # Create and configure a text box for transcription display.
     transcribe_textbox = ctk.CTkTextbox(call_window, height=200, width=500)
     transcribe_textbox.pack(pady=10, padx=20, expand=True, fill='both')
     transcribe_textbox.configure(state= "disabled")
 
+    # A function to update the text displayed in the transcription textbox.
     def update_transcribe_textbox(text):
         def callback():
             transcribe_textbox.configure(state="normal")
@@ -513,6 +533,8 @@ def open_call_window(callee_username, call_session):
 
     call_session.update_transcription_textbox = update_transcribe_textbox
 
+    # Layout and configuration of buttons for various call functions is handled below.
+    # Images are loaded, buttons are created with these images, and packed into the UI.
     pfp_image = Image.open("assets/pfp.png")
     pfp_photo = ctk.CTkImage(pfp_image, size=(200,200))
     pfp_label = ctk.CTkLabel(call_window, image = pfp_photo, text="")
@@ -520,7 +542,7 @@ def open_call_window(callee_username, call_session):
 
     user_label = ctk.CTkLabel(call_window, text=callee_username, font=("Roboto", 30))
     user_label.pack()
-
+    # Frame for all the buttons in call window
     buttons_frame = ctk.CTkFrame(call_window, fg_color="transparent")
     buttons_frame.pack(side='bottom', pady=40)
 
@@ -605,13 +627,17 @@ def open_call_window(callee_username, call_session):
                                 corner_radius=40, 
                                 fg_color="white", 
                                 command=tts_toggle)
-    
+    # Pack all of the buttons created above
+    # Transcribe Button
     transcribe_button.pack(side="right", padx=25)
+    # Text-To-Speech Button
     tts_button.pack(side="right", padx=25)
+    # Obfuscate Button
     obfuscate_button.pack(side="right", padx=25)
+    # Mute Button
     mute_button.pack(side="left", padx=25)
+    # Hang Up Button
     hang_up_button.pack(side="left", padx=25)
-
 
 def mute_call():
     # Logic to mute the call
@@ -620,28 +646,31 @@ def mute_call():
 
 def hang_up_call(window, call_session):
     global input_stream, output_stream, audio, start_call_thread, listen_call_thread
+    # Signal that the call has ended.
     call_session.call_end.set()
+    # Join threads handling the call.
     #listen_call_thread.join()
     start_call_thread.join()
-
+    # Close the input stream if it exists.
     if input_stream is not None:
         input_stream.stop_stream()
         input_stream.close()
         print("input stream closed")
+     # Close the output stream if it exists.
     if output_stream is not None:
         output_stream.stop_stream()
         output_stream.close()
         print("output stream closed")
 
-    #log transcript
+    # Log the call details to the database.
     call_session.end_time = time.time()
     print(call_session.call_log)
     database.log_call(call_session.caller, call_session.callee, call_session.call_date, call_session.call_log)
 
-
+    # Reset call session settings.
     call_session.call_end.clear()
     user.in_call.clear()
-    window.destroy()
+    window.destroy() # Close the call window.
 
 # Modified call_user function to include hiding and showing the Start Recording button
 def call_user():
@@ -670,6 +699,7 @@ new_nickname_entry = ctk.CTkEntry(search_frame, placeholder_text="Enter alias")
 new_nickname_entry.pack(side='left', padx=5)
 
 def handle_add_contact():
+    # Fetch user input for a new contact.
     username = new_username_entry.get().strip()
     nickname = new_nickname_entry.get().strip()
     if username and nickname:
@@ -683,22 +713,25 @@ def handle_add_contact():
         new_username_entry.delete(0, 'end')
         new_nickname_entry.delete(0, 'end')
     else:
+        # Alert the user if necessary information is missing.
         messagebox.showwarning("Missing Information", "Please enter BOTH a username and an alias.")
 
 
 def update_contacts_display(filtered_contacts=None):
+    # Clear existing contact widgets.
     for widget in scrollable_contacts_frame.winfo_children():
         widget.destroy()
 
     # Fetch contacts from the database
     if filtered_contacts is None:
         filtered_contacts = database.get_contacts(user.username)
-
+    # Display each contact in the scrollable frame.
     for contact in filtered_contacts:
         display_name = contact.get("username")  # Adjust field names based on your database schema
         nickname = contact.get("nickname")
         contact_label = ctk.CTkLabel(scrollable_contacts_frame, text=display_name)
         contact_label.pack(pady=2, anchor='w')
+        # Bind mouse events to show and hide nicknames, and handle clicking on the contact.
         contact_label.bind("<Enter>", lambda event, nickname=nickname: show_nickname(event, nickname))
         contact_label.bind("<Leave>", hide_nickname)
         contact_label.bind("<Button-1>", lambda event, username=display_name: callee_id_entry.delete(0, tk.END) or callee_id_entry.insert(0, username))
@@ -717,14 +750,17 @@ nickname_display_label.pack(side='bottom', fill='x', padx=10, pady=5)
 nickname_display_label.pack_forget()  # Initially, hide the label
 
 def show_nickname(event, nickname):
+    # Display nickname/ alias in a label.
     nickname_display_label.configure(text=f"Alias: {nickname}")
     nickname_display_label.pack(side='bottom', fill='x', padx=10, pady=5)
 
 def hide_nickname(event):
+    # Hide the nickname label.
     nickname_display_label.pack_forget()
     pass
 
 def copy_to_clipboard(username):
+    # Copy the selected username to the clipboard.
     pyperclip.copy(username)
     print(f"Copied to clipboard: {username}")
 
@@ -737,11 +773,12 @@ back_button_call.pack(pady=20, padx=20)
 
 logs_label = ctk.CTkLabel(logs_frame, text="Call Logs", font=(clock_font_family, 35))
 logs_label.pack(pady=20, padx=20)
-
+# Include button to take user back to main 
 back_button_logs = ctk.CTkButton(logs_frame, text="Back to Main", command=lambda: raise_frame(main_frame))
 back_button_logs.pack(pady=20, padx=20)
 
 def open_transcript_window(transcript):
+    # This function creates a window to display the call transcript.
     transcript_window = Toplevel(app)
     transcript_window.title("Call Transcript")
     transcript_window.geometry("500x300")  # Set a reasonable size for the transcript window
@@ -757,8 +794,9 @@ def open_transcript_window(transcript):
     scrollbar.pack(side='right', fill='y')
     transcript_text.config(yscrollcommand=scrollbar.set)
 
-#Set this up to be window so that its not hardcoded
+# Set this up to be window so that its not hardcoded
 def setup_logs_frame(username):
+    # Sets up the logs frame with a table to display call logs.
     logs_table = ttk.Treeview(logs_frame, height=10)
     logs_table.pack(expand=True, fill='both', side='top')
 
@@ -806,31 +844,35 @@ def setup_logs_frame(username):
 
 # Function to handle the sign-in process (placeholder for actual functionality)
 def sign_in():
+    # Process user credentials and transition to the main interface.
     username = username_entry.get()
     password = password_entry.get()
     update_input_devices_combobox()  # Update the devices combobox
     update_output_devices_combobox()
     if(database.login(username, password)):
         user.username = username
-        connect_with_server()
+        connect_with_server() # Connect to the server if login is successful.
 
-        raise_frame(main_frame)
-        setup_logs_frame(username)
-        update_contacts_display()
+        raise_frame(main_frame) # Change UI to the main frame.
+        setup_logs_frame(username) # Setup the logs frame with user-specific logs.
+        update_contacts_display() # Update the displayed contacts.
 
     else:
+        # Inform the user if login fails.
         messagebox.showinfo("Login Attempt Failed", "The username or password you entered is incorrect.")
         password_entry.delete(0, tk.END)
     
 def sign_up():
+     # Registers a new user if passwords match.
     username = username_entry_signup.get()
     password = password_entry_signup.get()
     verify_password = confirm_password_entry.get()
 
     if (password == verify_password):
         database.create_user(username, password)
-        raise_frame(log_in_frame)
+        raise_frame(log_in_frame) # Return to the login frame after successful signup.
     else:
+        # Inform the user if the passwords do not match.
         messagebox.showinfo("Signup Attempt", f"Passwords do not match\nPlease try again")
 
 # Setting up the log_in_frame
@@ -921,15 +963,20 @@ back_to_login_button = ctk.CTkButton(sign_up_frame_content, text="Back to Login"
 back_to_login_button.pack(pady=10)
 
 def on_close():
+    # Function to handle the application close event, ensuring all resources are properly released.
     global input_stream, output_stream, audio
+    # Check if there is an active input stream and stop and close it if it exists.
     if input_stream is not None:
         input_stream.stop_stream()
         input_stream.close()
+        # Check if there is an active output stream and stop and close it if it exists.
     if output_stream is not None:
         output_stream.stop_stream()
         output_stream.close()
+        # Check if the PyAudio instance is active and terminate it if it exists.
     if audio is not None:
         audio.terminate()
+        # Finally, destroy the application window to close the application completely.
     app.destroy()
 
 app.protocol("WM_DELETE_WINDOW", on_close)
@@ -937,5 +984,5 @@ app.protocol("WM_DELETE_WINDOW", on_close)
 # raise_frame(main_frame)
 # Initially, show the main frame
 raise_frame(log_in_frame)
-
+# Start main app
 app.mainloop()
