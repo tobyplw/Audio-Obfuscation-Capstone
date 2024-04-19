@@ -4,8 +4,23 @@
 -   dnspython 
 -   pymongo 
 -   certifi 
--   customtkinter 
+-   customtkinter
+-   tk 
 -   bcrypt
+-   public-ip
+-   deepgram-sdk
+-   datetime
+-   PIL
+-   pylibsrtp
+-   pyaudio
+-   random
+-   numpy
+-   stun
+-   googletrans
+-   pyperclip
+-   scipy
+-   pedalboard
+
 
 Run the following to install all dependancies:
 ```bash
