@@ -1,22 +1,26 @@
 import struct
 
-#if payload_type = 0, AUDIO DATA
-#if payload_type = 1, TRANSCRIPTIONS
-#if payload_type = 2, HANGUP
+# create the RTP header for each packet
+# inputs: Sequence number for the packet, timestamp, and payload_type to determine packet content
 def create_rtp_header(sequence_number, timestamp, ssrc, payload_type):
     version = 2  # RTP version
     padding = 0
     extension = 0
     csrc_count = 0 
     marker = 0
+    #if payload_type = 0, AUDIO DATA
+    #if payload_type = 1, TRANSCRIPTIONS
+    #if payload_type = 2, HANGUP    
     payload_type = payload_type 
+    #pack the header with all that info
     header = struct.pack('!BBHII', (version << 6) | (padding << 5) | (extension << 4) | csrc_count,
                          (marker << 7) | payload_type, sequence_number, timestamp, ssrc)
     return header
 
-
+# Parse the RTP header into a map
+# input: byte data
 def parse_rtp_header(data):
-    # Parse the RTP header
+    #extract information based on location in data. Lots of byte manipulation!
     version = (data[0] & 0xC0) >> 6
     padding = (data[0] & 0x20) >> 5
     extension = (data[0] & 0x10) >> 4
@@ -27,6 +31,7 @@ def parse_rtp_header(data):
     timestamp = struct.unpack('!I', data[4:8])[0]
     ssrc = struct.unpack('!I', data[8:12])[0]
 
+    #create a map from extracted data
     return {
         "version": version,
         "padding": padding,
@@ -39,6 +44,7 @@ def parse_rtp_header(data):
         "ssrc": ssrc
     }
 
+#print rtp header for debugging purposes
 def print_header(header, elapsed_time):
     print("__________________________")
     print("RTP Header:")
